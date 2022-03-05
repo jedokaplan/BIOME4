@@ -1,0 +1,6 @@
+&joboptions
+! the path to the input climate file and soils files go here, along with the atmospheric CO2 concentrations for the run
+climatefile= '',
+soilfile   = '',
+co2        = 324.
+/
