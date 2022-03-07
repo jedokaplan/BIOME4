@@ -163,10 +163,16 @@ allocate(cldp(cntx,cnty,tlen))
 ! elevation
 
 status = nf90_inq_varid(ncid,'elv',varid)
-if (status /= nf90_noerr) call handle_err(status)
+if (status == nf90_noerr) then
 
-status = nf90_get_var(ncid,varid,elv,start=[srtx,srty],count=[cntx,cnty])
-if (status /= nf90_noerr) call handle_err(status)
+  status = nf90_get_var(ncid,varid,elv,start=[srtx,srty],count=[cntx,cnty])
+  if (status /= nf90_noerr) call handle_err(status)
+  
+else
+
+  elv = 0.
+
+end if
 
 !-------------------------------------------------------
 ! temperature
