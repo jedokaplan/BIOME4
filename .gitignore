@@ -1,0 +1,4 @@
+# Ignore compiled files
+*.mod
+*.o
+BIOME4
