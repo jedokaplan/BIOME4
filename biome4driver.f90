@@ -7,6 +7,7 @@ use netcdf
 use coordsmod
 use netcdfmod, only : handle_err,genoutfile
 use parametersmod
+use f90getopt
 
 implicit none
 
@@ -63,7 +64,6 @@ real(sp)    :: scale_factor
 real(sp)    :: add_offset
 integer(i2) :: missing
 
-character(100) :: jobfile
 character(100) :: climatefile
 character(100) :: soilfile
 character(100) :: outfile
@@ -85,17 +85,76 @@ logical :: diag
 
 real(sp), dimension(2) :: rng
 
-namelist / joboptions / climatefile,soilfile,co2
+! Command line argument definitions for f90getopt
+! option_s derived type: long name, valued?, short name
 
-!------------------------------------------------------------------------------------------------------------
+type(option_s) :: opts(6)
+opts(1) = option_s("help",        .false.,  "h")
+opts(2) = option_s("diagnostics", .false.,  "d")
+opts(3) = option_s("climate",     .true.,   "c")
+opts(4) = option_s("soil",        .true.,   "s")
+opts(5) = option_s("output",      .true.,   "o")
+opts(6) = option_s("co2",         .true.,   "g")
+opts(7) = option_s("extents",     .true.,   "e")
 
-call getarg(1,jobfile)
+! Command line defaults and trapping mandatory arguments
+diag = .false.
+coordstring = ''
+climatefile_not_set = .true.
+soilfile_not_set = .true.
+outfile_not_set = .true.
+co2_not_set = .true.
 
-open(10,file=jobfile,status='old')
+! Processing options
+! ------------------------
+! getopt(optstr, longopt):
+!  - optstr = option shortnames (+: if valued)
+!  - opts   = matching option_s for long opts
+do
+  select case(getopt("hdc:s:o:g:e:", opts))
+  case(char(0))
+    exit
+  case("h") ! help output
+    print*, "Usage: biome4 -c climate .nc -s soil.nc -o output.nc -g 410 "
+    print*, "Options:"
+    print*, "  -h  --help         Print this help screen"
+    print*, "  -d  --diagnostics  Include diagnostics"
+    print*, "  -e  --extents      Lat long extents (e.g. -110/110/-55/55)" 
+    print*, "Required arguments:"
+    print*, "  -c  --climate      Input climate data file"
+    print*, "  -s  --soils        Input soil data file settings file"
+    print*, "  -o  --output       Output data file"
+    print*, "  -c  --co2          CO2 (ppm)"
+    stop
+  case("d") ! option --diagnostic
+    diag = .true.
+  case("e") ! option --extents
+    coordstring = trim(optarg)
+  case("c") ! option --climate
+    climatefile = trim(optarg)
+    climatefile_not_set = .false.
+  case("s") ! option --soil
+    soilfile = trim(optarg)
+    soilfile_not_set = .false.
+  case("o") ! option --outfile
+    outfile = trim(optarg)
+    outfile_not_set = .false.
+  case("g") ! option --co2
+    if (isnum(trim(optarg)) > 0) then ! Check for number in "optarg"
+      read(optarg,*) co2 ! Convert character string to double precision
+      co2_not_set = .false.
+    else
+      write(1,*) "ERROR: -g/--co2 is not a number."
+      stop
+    end if
+  end select
+end do
 
-read(10,nml=joboptions)
-
-close(10)
+! Check for missing mandatory settings.
+if (infile_not_set .or. outfile_not_set .or. settings_not_set .or. co2_not_set) then
+  write(1,*) "ERROR: missing required settings, use options -h or --help for details"
+  stop
+end if
 
 !-------------------------------------------------------
 ! input data file size
@@ -126,9 +185,7 @@ allocate(lat(ylen))
 
 !-------------------------------------------------------
 
-call getarg(2,coordstring)
-
-if (coordstring == 'alldata') then
+if (coordstring == '') then
 
   srtx = 1
   srty = 1
@@ -324,12 +381,6 @@ if (status /= nf90_noerr) call handle_err(status)
 call getarg(3,outfile)
 
 call genoutfile(outfile,cntx,cnty,ncid)
-
-if (trim(outfile) == 'diag.nc') then
-  diag = .true. ! iopt
-else
-  diag = .false.  ! iopt
-end if
 
 !-------------------------------------------------------
 

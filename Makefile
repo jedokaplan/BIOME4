@@ -21,7 +21,8 @@ LIBS     = -lnetcdff
 
 #---------------------------------------------
 
-OBJS = parametersmod.o  \
+OBJS = f90getopt.o
+	   parametersmod.o  \
        netcdfmod.o      \
        coordsmod.o      \
        biome4.o         \
