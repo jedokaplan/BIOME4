@@ -85,19 +85,21 @@ logical :: diag
 
 real(sp), dimension(2) :: rng
 
+logical :: climatefile_not_set, soilfile_not_set, outfile_not_set, co2_not_set
+
 ! Command line argument definitions for f90getopt
 ! option_s derived type: long name, valued?, short name
 
-type(option_s) :: opts(6)
+type(option_s) :: opts(7)
 opts(1) = option_s("help",        .false.,  "h")
 opts(2) = option_s("diagnostics", .false.,  "d")
 opts(3) = option_s("climate",     .true.,   "c")
 opts(4) = option_s("soil",        .true.,   "s")
 opts(5) = option_s("output",      .true.,   "o")
-opts(6) = option_s("co2",         .true.,   "g")
+opts(6) = option_s("co2",         .true.,   "a")
 opts(7) = option_s("extents",     .true.,   "e")
 
-! Command line defaults and trapping mandatory arguments
+! Command line defaults and mandatory argument flags
 diag = .false.
 coordstring = ''
 climatefile_not_set = .true.
@@ -111,7 +113,7 @@ co2_not_set = .true.
 !  - optstr = option shortnames (+: if valued)
 !  - opts   = matching option_s for long opts
 do
-  select case(getopt("hdc:s:o:g:e:", opts))
+  select case(getopt("hdc:s:o:a:e:", opts))
   case(char(0))
     exit
   case("h") ! help output
@@ -124,35 +126,45 @@ do
     print*, "  -c  --climate      Input climate data file"
     print*, "  -s  --soils        Input soil data file settings file"
     print*, "  -o  --output       Output data file"
-    print*, "  -c  --co2          CO2 (ppm)"
+    print*, "  -a  --co2          Atmospheric CO2 (ppm)"
     stop
   case("d") ! option --diagnostic
+    print*,'d'
     diag = .true.
   case("e") ! option --extents
+    print*,'e',trim(optarg)
     coordstring = trim(optarg)
   case("c") ! option --climate
+    print*,'c',trim(optarg)
     climatefile = trim(optarg)
     climatefile_not_set = .false.
   case("s") ! option --soil
+    print*,'s',trim(optarg)
     soilfile = trim(optarg)
     soilfile_not_set = .false.
   case("o") ! option --outfile
+    print*,'o',trim(optarg)
     outfile = trim(optarg)
     outfile_not_set = .false.
-  case("g") ! option --co2
+  case("a") ! option --co2
+    print*,'a',trim(optarg)
     if (isnum(trim(optarg)) > 0) then ! Check for number in "optarg"
       read(optarg,*) co2 ! Convert character string to double precision
       co2_not_set = .false.
     else
-      write(1,*) "ERROR: -g/--co2 is not a number."
+      write(error_unit,*) "ERROR: -g/--co2 is not a number."
       stop
     end if
   end select
 end do
 
 ! Check for missing mandatory settings.
-if (infile_not_set .or. outfile_not_set .or. settings_not_set .or. co2_not_set) then
-  write(1,*) "ERROR: missing required settings, use options -h or --help for details"
+if (climatefile_not_set .or. soilfile_not_set .or. outfile_not_set .or. co2_not_set) then
+  write(error_unit,*) "ERROR: missing required settings, use options -h or --help for details"
+  print*,climatefile_not_set
+  print*,soilfile_not_set
+  print*,outfile_not_set
+  print*,co2_not_set
   stop
 end if
 
