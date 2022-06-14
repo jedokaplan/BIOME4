@@ -1,12 +1,12 @@
 # makefile for BIOME4, summer 2020
 
-FC=gfortran
+FC=ifort
 FCFLAGS  = 
 
 # use the command "nf-config --all" to find the location of your netCDF installation
 # and enter the path next to " --prefix    ->" on the line below
 
-netcdf=/home/public/easybuild/software/netCDF-Fortran/4.5.4-gompi-2021b
+netcdf=/apps/netcdf/4.5.2-fortran
 
 # should not need to modify anything below this line
 
@@ -21,8 +21,8 @@ LIBS     = -lnetcdff
 
 #---------------------------------------------
 
-OBJS = f90getopt.o
-	   parametersmod.o  \
+OBJS = f90getopt.o      \
+       parametersmod.o  \
        netcdfmod.o      \
        coordsmod.o      \
        biome4.o         \
@@ -30,7 +30,7 @@ OBJS = f90getopt.o
 
 #---------------------------------------------
 
-.SUFFIXES: .o .f90 .f .mod
+.SUFFIXES: .o .f90 .F90 .f .mod
 
 %.o : %.c
 	$(CC) $(CFLAGS) -c -o $(*F).o $(CPPFLAGS) $<
@@ -39,6 +39,9 @@ OBJS = f90getopt.o
 	$(FC) $(FCFLAGS) -c -o $(*F).o $(CPPFLAGS) $<
 
 %.o : %.f90
+	$(FC) $(FCFLAGS) -c -o $(*F).o $(CPPFLAGS) $<
+
+%.o : %.F90
 	$(FC) $(FCFLAGS) -c -o $(*F).o $(CPPFLAGS) $<
 
 all::	biome4
