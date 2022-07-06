@@ -1,14 +1,20 @@
 # makefile for BIOME4, summer 2020
 
-FC=gfortran
+FC=mpiifort
 FCFLAGS  = 
+
+netcdf=/apps/netcdf/4.4.4-fortran
 
 # should not need to modify anything below this line
 
 #---------------------------------------------
 
-CPPFLAGS := $(shell nf-config --cflags)
-LDFLAGS  := $(shell nf-config --flibs)
+NC_LIB=$(netcdf)/lib
+NC_INC=$(netcdf)/include
+
+CPPFLAGS = -I$(NC_INC)
+LDFLAGS  = -L$(NC_LIB)
+LIBS     = -lnetcdff
 
 #---------------------------------------------
 
@@ -38,7 +44,7 @@ OBJS = f90getopt.o      \
 all::	biome4
 
 biome4: $(OBJS)
-	$(FC) $(FCFLAGS) -o biome4 $(OBJS) $(LDFLAGS)
+	$(FC) $(FCFLAGS) -o biome4 $(OBJS) $(LDFLAGS) $(LIBS)
 
 clean::	
 	-rm *.o *.mod
