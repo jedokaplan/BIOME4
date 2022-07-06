@@ -161,10 +161,6 @@ end do
 ! Check for missing mandatory settings.
 if (climatefile_not_set .or. soilfile_not_set .or. outfile_not_set .or. co2_not_set) then
   write(error_unit,*) "ERROR: missing required settings, use options -h or --help for details"
-  print*,climatefile_not_set
-  print*,soilfile_not_set
-  print*,outfile_not_set
-  print*,co2_not_set
   stop
 end if
 
@@ -389,8 +385,6 @@ status = nf90_close(ncid)
 if (status /= nf90_noerr) call handle_err(status)
 
 !-------------------------------------------------------
-
-call getarg(3,outfile)
 
 call genoutfile(outfile,cntx,cnty,ncid)
 
