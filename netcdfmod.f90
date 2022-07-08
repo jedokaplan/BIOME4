@@ -22,7 +22,7 @@ implicit none
 integer, intent (in) :: status
 character(len=*), optional :: msg
 
-if(.not. present(prefix)) prefix = ""
+if(.not. present(msg)) msg = ""
 
 if(status /= nf90_noerr) then 
   print *, 'Error ', msg, ": ", trim(nf90_strerror(status))
