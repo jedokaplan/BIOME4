@@ -316,7 +316,7 @@ end where
 
 tmin = -9999.
 
-status = nf90_inq_varid(ncid,'cld',varid)
+status = nf90_inq_varid(ncid,'tmin',varid)
 if (status == nf90_noerr) then ! tmin is present, we will read it from the file 
 
   status = nf90_get_var(ncid,varid,ivar(:,:,1),start=[srtx,srty,1],count=[cntx,cnty])
