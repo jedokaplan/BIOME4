@@ -168,25 +168,25 @@ end if
 ! input data file size
 
 status = nf90_open(climatefile,nf90_nowrite,ncid)
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'opening climate file')
 
 status = nf90_inq_dimid(ncid,'lon',dimid)
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'finding lon variable')
 
 status = nf90_inquire_dimension(ncid,dimid,len=xlen)
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'getting lon size')
 
 status = nf90_inq_dimid(ncid,'lat',dimid)
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'finding lat variable')
 
 status = nf90_inquire_dimension(ncid,dimid,len=ylen)
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'getting lat size')
 
 status = nf90_inq_dimid(ncid,'time',dimid)
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'finding time variable')
 
 status = nf90_inquire_dimension(ncid,dimid,len=tlen)
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'getting time size')
 
 allocate(lon(xlen))
 allocate(lat(ylen))
@@ -231,7 +231,7 @@ status = nf90_inq_varid(ncid,'elv',varid)
 if (status == nf90_noerr) then
 
   status = nf90_get_var(ncid,varid,elv,start=[srtx,srty],count=[cntx,cnty])
-  if (status /= nf90_noerr) call handle_err(status)
+  if (status /= nf90_noerr) call handle_err(status, 'loading elv variable')
   
 else
 
@@ -245,19 +245,19 @@ end if
 temp = -9999.
 
 status = nf90_inq_varid(ncid,'tmp',varid)
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'finding tmp variable')
 
 status = nf90_get_var(ncid,varid,ivar,start=[srtx,srty,1],count=[cntx,cnty,tlen])
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'loading tmp variable')
 
 status = nf90_get_att(ncid,varid,'scale_factor',scale_factor)
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'getting scale_factor for tmp')
 
 status = nf90_get_att(ncid,varid,'add_offset',add_offset)
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'getting add_offset for tmp')
 
 status = nf90_get_att(ncid,varid,'missing_value',missing)
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'getting missing_value for tmp')
 
 where (ivar /= missing)
   temp = real(ivar) * scale_factor + add_offset
@@ -269,19 +269,19 @@ end where
 prec = -9999.
 
 status = nf90_inq_varid(ncid,'pre',varid)
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'finding pre variable')
 
 status = nf90_get_var(ncid,varid,ivar,start=[srtx,srty,1],count=[cntx,cnty,tlen])
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'loading pre variable')
 
 status = nf90_get_att(ncid,varid,'scale_factor',scale_factor)
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'getting scale_factor for pre')
 
 status = nf90_get_att(ncid,varid,'add_offset',add_offset)
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'getting add_offset for pre')
 
 status = nf90_get_att(ncid,varid,'missing_value',missing)
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'getting missing_value for pre')
 
 where (ivar /= missing)
   prec = real(ivar) * scale_factor + add_offset
@@ -293,19 +293,19 @@ end where
 cldp = -9999.
 
 status = nf90_inq_varid(ncid,'cld',varid)
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'finding cld variable')
 
 status = nf90_get_var(ncid,varid,ivar,start=[srtx,srty,1],count=[cntx,cnty,tlen])
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'loading cld variable')
 
 status = nf90_get_att(ncid,varid,'scale_factor',scale_factor)
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'getting scale_factor for cld')
 
 status = nf90_get_att(ncid,varid,'add_offset',add_offset)
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'getting add_offset for cld')
 
 status = nf90_get_att(ncid,varid,'missing_value',missing)
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'getting missing_value for cld')
 
 where (ivar /= missing)
   cldp = real(ivar) * scale_factor + add_offset
@@ -320,16 +320,16 @@ status = nf90_inq_varid(ncid,'cld',varid)
 if (status == nf90_noerr) then ! tmin is present, we will read it from the file 
 
   status = nf90_get_var(ncid,varid,ivar(:,:,1),start=[srtx,srty,1],count=[cntx,cnty])
-  if (status /= nf90_noerr) call handle_err(status)
+  if (status /= nf90_noerr) call handle_err(status, 'loading tmin variable')
 
   status = nf90_get_att(ncid,varid,'scale_factor',scale_factor)
-  if (status /= nf90_noerr) call handle_err(status)
+  if (status /= nf90_noerr) call handle_err(status, 'getting scale_factor for tmin')
 
   status = nf90_get_att(ncid,varid,'add_offset',add_offset)
-  if (status /= nf90_noerr) call handle_err(status)
+  if (status /= nf90_noerr) call handle_err(status, 'getting add_offset for tmin')
 
   status = nf90_get_att(ncid,varid,'missing_value',missing)
-  if (status /= nf90_noerr) call handle_err(status)
+  if (status /= nf90_noerr) call handle_err(status, 'getting missing_value for tmin')
 
   where (ivar(:,:,1) /= missing)
     tmin = real(ivar(:,:,1)) * scale_factor + add_offset
@@ -358,31 +358,31 @@ status = nf90_close(ncid)
 !-------------------------------------------------------
 
 status = nf90_open(soilfile,nf90_nowrite,ncid)
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'opening soil file')
 
 status = nf90_inq_dimid(ncid,'layer',dimid)
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'finding layer variable')
 
 status = nf90_inquire_dimension(ncid,dimid,len=llen)
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'getting layer size')
 
 allocate(whc(cntx,cnty,llen))
 allocate(ksat(cntx,cnty,llen))
 
 status = nf90_inq_varid(ncid,'whc',varid)
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'finding whc variable')
 
 status = nf90_get_var(ncid,varid,whc,start=[srtx,srty,1],count=[cntx,cnty,llen])
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'loading whc variable')
 
 status = nf90_inq_varid(ncid,'perc',varid)
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'finding perc variable')
 
 status = nf90_get_var(ncid,varid,ksat,start=[srtx,srty,1],count=[cntx,cnty,llen])
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'loading perc variable')
 
 status = nf90_close(ncid)
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'closing soil file')
 
 !-------------------------------------------------------
 
@@ -455,73 +455,73 @@ end do
 write(0,*)'writing'
 
 status = nf90_inq_varid(ncid,'lon',varid)
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'finding lon variable')
 
 status = nf90_put_var(ncid,varid,lon(srtx:endx))
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'writing lon variable')
 
 rng = [minval(lon(srtx:endx)),maxval(lon(srtx:endx))]
 
 status = nf90_put_att(ncid,varid,'actual_range',rng)
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'writing actual_range for lon')
 
 ! ---
 
 status = nf90_inq_varid(ncid,'lat',varid)
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'finding lat variable')
 
 status = nf90_put_var(ncid,varid,lat(srty:endy))
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'writing lat variable')
 
 rng = [minval(lat(srty:endy)),maxval(lat(srty:endy))]
 
 status = nf90_put_att(ncid,varid,'actual_range',rng)
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'writing actual_range for lat')
 
 ! ---
 
 status = nf90_inq_varid(ncid,'pft',varid)
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'finding pft variable')
 
 status = nf90_put_var(ncid,varid,[(i,i=1,13)])
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'writing pft variable')
 
 ! ---
 
 status = nf90_inq_varid(ncid,'biome',varid)
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'finding biome variable')
 
 status = nf90_put_var(ncid,varid,biome)
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'writing biome variable')
 
 ! ---
 
 status = nf90_inq_varid(ncid,'wdom',varid)
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'finding wdom variable')
 
 status = nf90_put_var(ncid,varid,wdom)
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'writing wdom variable')
 
 ! ---
 
 status = nf90_inq_varid(ncid,'gdom',varid)
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'finding gdom variable')
 
 status = nf90_put_var(ncid,varid,gdom)
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'writing gdom variable')
 
 ! ---
 
 status = nf90_inq_varid(ncid,'npp',varid)
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'finding npp variable')
 
 status = nf90_put_var(ncid,varid,npp)
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'writing npp variable')
 
 ! ---
 
 status = nf90_close(ncid)
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) call handle_err(status, 'closing output file')
 
 !------------------------------------------------------------------------------------------------------------
 ! catalog of arguments 

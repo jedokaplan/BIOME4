@@ -12,7 +12,7 @@ contains
 
 !-------------------------------------------------------
 
-subroutine handle_err(status)
+subroutine handle_err(status, msg)
 
 implicit none
 
@@ -20,9 +20,12 @@ implicit none
 !   prints out text message each time an error code is returned. 
 
 integer, intent (in) :: status
+character(len=*), optional :: msg
+
+if(.not. present(prefix)) prefix = ""
 
 if(status /= nf90_noerr) then 
-  print *, trim(nf90_strerror(status))
+  print *, 'Error ', msg, ": ", trim(nf90_strerror(status))
   stop
 end if
 
