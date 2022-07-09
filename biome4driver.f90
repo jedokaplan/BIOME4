@@ -223,6 +223,7 @@ allocate(ivar(cntx,cnty,tlen))
 allocate(temp(cntx,cnty,tlen))
 allocate(prec(cntx,cnty,tlen))
 allocate(cldp(cntx,cnty,tlen))
+allocate(tmin(cntx,cnty))
 
 !-------------------------------------------------------
 ! elevation
