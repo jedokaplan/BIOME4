@@ -128,7 +128,7 @@ do
     print*, "  -h  --help         Print this help screen"
     print*, "  -v  --verbose      Verbose setup reporting"
     print*, "  -d  --diagnostics  Include diagnostics"
-    print*, "  -e  --extents      Lat long extents (e.g. -110/110/-55/55)" 
+    print*, "  -e  --extents      A GMT formatted extent string (e.g. -110/110/-55/55)" 
     print*, "Required arguments:"
     print*, "  -c  --climate      Input climate data file"
     print*, "  -s  --soils        Input soil data file settings file"
@@ -172,27 +172,25 @@ end if
 
 if (verbose) then
   print*, "Running BIOME4 in verbose mode"
-  if (diag) print*, "*** Using diagnostic mode ***"
-  print*, "Atmospheric CO2 concentration:", co2
-  if (coordstring /= "") print*, "GMT coordinate string: ", coordstring
-
+  if (diag) print*, "> *** Using diagnostic mode ***"
+  print*, "> Atmospheric CO2 concentration:", co2
 end if
 
 !-------------------------------------------------------
 ! input data file size
 
-if (verbose) print*, "Opening climate file: ", climatefile
+if (verbose) print*, "> Opening climate file: ", climatefile
 status = nf90_open(climatefile,nf90_nowrite,ncid)
-if (status /= nf90_noerr) call handle_err(status, 'opening climate file')
+if (status /= nf90_noerr) call handle_err(status)
 
-if (verbose) print*, " - Getting lon size"
+if (verbose) print*, "  > Getting lon size"
 status = nf90_inq_dimid(ncid,'lon',dimid)
 if (status /= nf90_noerr) call handle_err(status, 'finding lon dimension')
 
 status = nf90_inquire_dimension(ncid,dimid,len=xlen)
 if (status /= nf90_noerr) call handle_err(status, 'getting lon size')
 
-if (verbose) print*, " - Reading lon data"
+if (verbose) print*, "  > Reading lon data"
 allocate(all_lon(xlen))
 
 status = nf90_inq_varid(ncid,'lon',varid)
@@ -201,7 +199,7 @@ if (status /= nf90_noerr) call handle_err(status, 'finding lon variable')
 status = nf90_get_var(ncid,varid, all_lon, start=[1], count=[xlen])
 if (status /= nf90_noerr) call handle_err(status, 'loading full lon range')
 
-if (verbose) print*, " -  Getting lat size"
+if (verbose) print*, "  > Getting lat size"
 
 status = nf90_inq_dimid(ncid,'lat',dimid)
 if (status /= nf90_noerr) call handle_err(status, 'finding lat dimension')
@@ -209,7 +207,7 @@ if (status /= nf90_noerr) call handle_err(status, 'finding lat dimension')
 status = nf90_inquire_dimension(ncid,dimid,len=ylen)
 if (status /= nf90_noerr) call handle_err(status, 'getting lat size')
 
-if (verbose) print*, " -  Reading full data"
+if (verbose) print*, "  > Reading lat data"
 
 allocate(all_lat(ylen))
 
@@ -219,7 +217,7 @@ if (status /= nf90_noerr) call handle_err(status, 'finding tmp variable')
 status = nf90_get_var(ncid,varid, all_lat, start=[1], count=[ylen])
 if (status /= nf90_noerr) call handle_err(status, 'loading full lat range')
 
-if (verbose) print*, " -  Getting time size"
+if (verbose) print*, "  > Getting time size"
 
 status = nf90_inq_dimid(ncid,'time',dimid)
 if (status /= nf90_noerr) call handle_err(status, 'finding time variable')
@@ -229,11 +227,12 @@ if (status /= nf90_noerr) call handle_err(status, 'getting time size')
 
 
 !-------------------------------------------------------
-! Set defaults
+
+if (verbose) print*, "  > Setting model extents"
 
 if (coordstring == '') then
 
-  if (verbose) print*, " -  Using full data extent"
+  if (verbose) print*, "    > Using full data extent"
 
   srtx = 1
   srty = 1
@@ -244,14 +243,14 @@ if (coordstring == '') then
 
 else
 
-  if (verbose) print*, " -  Calculating coordstring subset"
+  if (verbose) print*, "    > Subsetting using GMT string: ", coordstring
 
   call parsecoords(coordstring, boundingbox)
   call calcpixels(all_lon, all_lat, boundingbox, srtx, srty, cntx, cnty)
   
   if (verbose) then
-    print*, " -  Using longitudes:", all_lon(srtx), " - ", all_lon(srtx +  cntx)
-    print*, " -  Using latitudes:", all_lat(srty), " - ", all_lat(srty +  cnty) 
+    print*, "    > Using cell longitudes:", all_lon(srtx), " - ", all_lon(srtx +  cntx)
+    print*, "    > Using cell latitudes:", all_lat(srty), " - ", all_lat(srty +  cnty) 
   end if
 
   endx = srtx + cntx - 1
@@ -273,19 +272,19 @@ allocate(tmin(cntx,cnty))
 !-------------------------------------------------------
 ! elevation
 
-if (verbose) print*, " -  Checking for elevation data"
+if (verbose) print*, "  > Checking for elevation data"
 
 status = nf90_inq_varid(ncid,'elv',varid)
 if (status == nf90_noerr) then
 
-  if (verbose) print*, " - Loading elevation data"
+  if (verbose) print*, "    > Loading elevation data"
 
   status = nf90_get_var(ncid,varid,elv,start=[srtx,srty],count=[cntx,cnty])
   if (status /= nf90_noerr) call handle_err(status, 'loading elv variable')
   
 else
 
-  if (verbose) print*, " -  Setting elevation to zero"
+  if (verbose) print*, "    > Setting elevation to zero"
 
   elv = 0.
 
@@ -296,7 +295,7 @@ end if
 
 temp = -9999.
 
-if (verbose) print*, " -  Loading temperature data"
+if (verbose) print*, "  > Loading temperature data"
 
 status = nf90_inq_varid(ncid,'tmp',varid)
 if (status /= nf90_noerr) call handle_err(status, 'finding tmp variable')
@@ -322,7 +321,7 @@ end where
 
 prec = -9999.
 
-if (verbose) print*, " -  Loading preciptation data"
+if (verbose) print*, "  > Loading preciptation data"
 
 status = nf90_inq_varid(ncid,'pre',varid)
 if (status /= nf90_noerr) call handle_err(status, 'finding pre variable')
@@ -348,7 +347,7 @@ end where
 
 cldp = -9999.
 
-if (verbose) print*, " -  Loading percentage cloud data"
+if (verbose) print*, "  > Loading percentage cloud data"
 
 status = nf90_inq_varid(ncid,'cld',varid)
 if (status /= nf90_noerr) call handle_err(status, 'finding cld variable')
@@ -374,12 +373,12 @@ end where
 
 tmin = -9999.
 
-if (verbose) print*, " -  Checking for minimum temperature data"
+if (verbose) print*, "  > Checking for minimum temperature data"
 
 status = nf90_inq_varid(ncid,'tmin',varid)
 if (status == nf90_noerr) then ! tmin is present, we will read it from the file 
 
-  if (verbose) print*, " -  Loading minimum temperature data"
+  if (verbose) print*, "    > Loading minimum temperature data"
 
   status = nf90_get_var(ncid,varid,ivar(:,:,1),start=[srtx,srty,1],count=[cntx,cnty])
   if (status /= nf90_noerr) call handle_err(status, 'loading tmin variable')
@@ -399,7 +398,7 @@ if (status == nf90_noerr) then ! tmin is present, we will read it from the file
 
 else ! tmin is not present in the input, we will estimate it base on temperature
 
-  if (verbose) print*, " -  Estimating minimum temperature data"
+  if (verbose) print*, "    > Estimating minimum temperature data"
 
   allocate(tcm(cntx,cnty))
 
@@ -416,18 +415,18 @@ else ! tmin is not present in the input, we will estimate it base on temperature
 end if
 
 !-------------------------------------------------------
-if (verbose) print*, " -  Closing climate file"
+if (verbose) print*, "  > Closing climate file"
 
 status = nf90_close(ncid)
 
 !-------------------------------------------------------
 
-if (verbose) print*, " -  Opening soil file: ", soilfile
+if (verbose) print*, "> Opening soil file: ", soilfile
 
 status = nf90_open(soilfile,nf90_nowrite,ncid)
 if (status /= nf90_noerr) call handle_err(status, 'opening soil file')
 
-if (verbose) print*, " -  Getting soil layer size"
+if (verbose) print*, "  > Getting soil layer size"
 
 status = nf90_inq_dimid(ncid,'layer',dimid)
 if (status /= nf90_noerr) call handle_err(status, 'finding layer variable')
@@ -438,7 +437,7 @@ if (status /= nf90_noerr) call handle_err(status, 'getting layer size')
 allocate(whc(cntx,cnty,llen))
 allocate(ksat(cntx,cnty,llen))
 
-if (verbose) print*, " -  Loading whc data"
+if (verbose) print*, "  > Loading whc data"
 
 status = nf90_inq_varid(ncid,'whc',varid)
 if (status /= nf90_noerr) call handle_err(status, 'finding whc variable')
@@ -446,7 +445,7 @@ if (status /= nf90_noerr) call handle_err(status, 'finding whc variable')
 status = nf90_get_var(ncid,varid,whc,start=[srtx,srty,1],count=[cntx,cnty,llen])
 if (status /= nf90_noerr) call handle_err(status, 'loading whc variable')
 
-if (verbose) print*, " -  Loading perc data"
+if (verbose) print*, "  > Loading perc data"
 
 status = nf90_inq_varid(ncid,'perc',varid)
 if (status /= nf90_noerr) call handle_err(status, 'finding perc variable')
@@ -454,19 +453,19 @@ if (status /= nf90_noerr) call handle_err(status, 'finding perc variable')
 status = nf90_get_var(ncid,varid,ksat,start=[srtx,srty,1],count=[cntx,cnty,llen])
 if (status /= nf90_noerr) call handle_err(status, 'loading perc variable')
 
-if (verbose) print*, " - Closing soil file "
+if (verbose) print*, "  > Closing soil file "
 
 status = nf90_close(ncid)
 if (status /= nf90_noerr) call handle_err(status, 'closing soil file')
 
 !-------------------------------------------------------
-if (verbose) print*, " -  Initialising output file: ", outfile
+if (verbose) print*, "> Initialising output file: ", outfile
 
 call genoutfile(outfile,cntx,cnty,ncid)
 
 !-------------------------------------------------------
 
-if (verbose) print*, " -  Running model ", soilfile
+if (verbose) print*, "> Running model ", soilfile
 
 allocate(biome(cntx,cnty))
 allocate(wdom(cntx,cnty))
@@ -483,7 +482,7 @@ npp   = -9999.
 do y = 1,cnty
   
   if (verbose) then
-    write(0,*) ' - working on row ',y,' out of ',cnty
+    write(0,*) '  > Working on row ',y,' out of ',cnty
   else 
     write(0, '(A)', advance='no') '.'
   endif
@@ -537,8 +536,8 @@ end do
 if (.not.verbose) write(0,*) ''  ! carriage return after '......' progress
 
 if (verbose) then
-  print*, " -  Writing data to ", outfile
-  print*, " -  Writing lon variable"
+  print*, "> Writing data to ", outfile
+  print*, "  > Writing lon variable"
 end if
 
 status = nf90_inq_varid(ncid,'lon',varid)
@@ -554,7 +553,7 @@ if (status /= nf90_noerr) call handle_err(status, 'writing actual_range for lon'
 
 ! ---
 
-if (verbose) print*, " -  Writing lat variable"
+if (verbose) print*, "  > Writing lat variable"
 
 status = nf90_inq_varid(ncid,'lat',varid)
 if (status /= nf90_noerr) call handle_err(status, 'finding lat variable')
@@ -569,7 +568,7 @@ if (status /= nf90_noerr) call handle_err(status, 'writing actual_range for lat'
 
 ! ---
 
-if (verbose) print*, " -  Writing pft variable"
+if (verbose) print*, "  > Writing pft variable"
 
 status = nf90_inq_varid(ncid,'pft',varid)
 if (status /= nf90_noerr) call handle_err(status, 'finding pft variable')
@@ -579,7 +578,7 @@ if (status /= nf90_noerr) call handle_err(status, 'writing pft variable')
 
 ! ---
 
-if (verbose) print*, " -  Writing biome variable"
+if (verbose) print*, "  > Writing biome variable"
 
 status = nf90_inq_varid(ncid,'biome',varid)
 if (status /= nf90_noerr) call handle_err(status, 'finding biome variable')
@@ -589,7 +588,7 @@ if (status /= nf90_noerr) call handle_err(status, 'writing biome variable')
 
 ! ---
 
-if (verbose) print*, " -  Writing wdom variable"
+if (verbose) print*, "  > Writing wdom variable"
 
 status = nf90_inq_varid(ncid,'wdom',varid)
 if (status /= nf90_noerr) call handle_err(status, 'finding wdom variable')
@@ -599,7 +598,7 @@ if (status /= nf90_noerr) call handle_err(status, 'writing wdom variable')
 
 ! ---
 
-if (verbose) print*, " -  Writing gdom variable"
+if (verbose) print*, "  > Writing gdom variable"
 
 status = nf90_inq_varid(ncid,'gdom',varid)
 if (status /= nf90_noerr) call handle_err(status, 'finding gdom variable')
@@ -609,7 +608,7 @@ if (status /= nf90_noerr) call handle_err(status, 'writing gdom variable')
 
 ! ---
 
-if (verbose) print*, " -  Writing npp variable"
+if (verbose) print*, "  > Writing npp variable"
 
 status = nf90_inq_varid(ncid,'npp',varid)
 if (status /= nf90_noerr) call handle_err(status, 'finding npp variable')
@@ -619,12 +618,12 @@ if (status /= nf90_noerr) call handle_err(status, 'writing npp variable')
 
 ! ---
 
-if (verbose) print*, " -  Closing output file"
+if (verbose) print*, "  > Closing output file"
 
 status = nf90_close(ncid)
 if (status /= nf90_noerr) call handle_err(status, 'closing output file')
 
-if (verbose) print*, "Model complete"
+if (verbose) print*, "> Model complete"
 
 !------------------------------------------------------------------------------------------------------------
 ! catalog of arguments 
