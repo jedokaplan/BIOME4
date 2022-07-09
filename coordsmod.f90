@@ -122,7 +122,7 @@ if (below) then
     end if
   end do
 else
-  do pos = size(vect), 1, -1
+  do pos = size_vect, 1, -1
     if (vect(pos).le.val) then
       include_coord = min(pos + 1, size_vect) 
       exit

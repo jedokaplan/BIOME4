@@ -543,10 +543,10 @@ end if
 status = nf90_inq_varid(ncid,'lon',varid)
 if (status /= nf90_noerr) call handle_err(status, 'finding lon variable')
 
-status = nf90_put_var(ncid,varid,lon(srtx:endx))
+status = nf90_put_var(ncid,varid,lon)
 if (status /= nf90_noerr) call handle_err(status, 'writing lon variable')
 
-rng = [minval(lon(srtx:endx)),maxval(lon(srtx:endx))]
+rng = [minval(lon),maxval(lon)]
 
 status = nf90_put_att(ncid,varid,'actual_range',rng)
 if (status /= nf90_noerr) call handle_err(status, 'writing actual_range for lon')
@@ -558,10 +558,10 @@ if (verbose) print*, "  > Writing lat variable"
 status = nf90_inq_varid(ncid,'lat',varid)
 if (status /= nf90_noerr) call handle_err(status, 'finding lat variable')
 
-status = nf90_put_var(ncid,varid,lat(srty:endy))
+status = nf90_put_var(ncid,varid,lat)
 if (status /= nf90_noerr) call handle_err(status, 'writing lat variable')
 
-rng = [minval(lat(srty:endy)),maxval(lat(srty:endy))]
+rng = [minval(lat),maxval(lat)]
 
 status = nf90_put_att(ncid,varid,'actual_range',rng)
 if (status /= nf90_noerr) call handle_err(status, 'writing actual_range for lat')
