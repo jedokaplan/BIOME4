@@ -18,8 +18,11 @@ real(sp), parameter :: g  =      9.80665      ! earth surface gravitational acce
 real(sp), parameter :: M  =      0.02896968   ! molar mass of dry air (kg mo-1)
 real(sp), parameter :: R0 =      8.314462618  ! universal gas constant (J mol-1 K-1)
 
+real(dp),    allocatable, dimension(:)   :: all_lon
+real(dp),    allocatable, dimension(:)   :: all_lat
 real(dp),    allocatable, dimension(:)   :: lon
 real(dp),    allocatable, dimension(:)   :: lat
+
 
 real(sp),    allocatable, dimension(:,:)   :: elv
 real(sp),    allocatable, dimension(:,:)   :: tcm
@@ -189,11 +192,34 @@ if (status /= nf90_noerr) call handle_err(status, 'finding lon dimension')
 status = nf90_inquire_dimension(ncid,dimid,len=xlen)
 if (status /= nf90_noerr) call handle_err(status, 'getting lon size')
 
+if (verbose) print*, " - Reading lon data"
+allocate(all_lon(xlen))
+
+status = nf90_inq_varid(ncid,'lon',varid)
+if (status /= nf90_noerr) call handle_err(status, 'finding lon variable')
+
+status = nf90_get_var(ncid,varid, all_lon, start=[1], count=[xlen])
+if (status /= nf90_noerr) call handle_err(status, 'loading full lon range')
+
+if (verbose) print*, " -  Getting lat size"
+
 status = nf90_inq_dimid(ncid,'lat',dimid)
 if (status /= nf90_noerr) call handle_err(status, 'finding lat dimension')
 
 status = nf90_inquire_dimension(ncid,dimid,len=ylen)
 if (status /= nf90_noerr) call handle_err(status, 'getting lat size')
+
+if (verbose) print*, " -  Reading full data"
+
+allocate(all_lat(ylen))
+
+status = nf90_inq_varid(ncid,'lat',varid)
+if (status /= nf90_noerr) call handle_err(status, 'finding tmp variable')
+
+status = nf90_get_var(ncid,varid, all_lat, start=[1], count=[ylen])
+if (status /= nf90_noerr) call handle_err(status, 'loading full lat range')
+
+if (verbose) print*, " -  Getting time size"
 
 status = nf90_inq_dimid(ncid,'time',dimid)
 if (status /= nf90_noerr) call handle_err(status, 'finding time variable')
@@ -201,36 +227,42 @@ if (status /= nf90_noerr) call handle_err(status, 'finding time variable')
 status = nf90_inquire_dimension(ncid,dimid,len=tlen)
 if (status /= nf90_noerr) call handle_err(status, 'getting time size')
 
-allocate(lon(xlen))
-allocate(lat(ylen))
 
 !-------------------------------------------------------
+! Set defaults
 
 if (coordstring == '') then
+
+  if (verbose) print*, " -  Using full data extent"
 
   srtx = 1
   srty = 1
   cntx = xlen
   cnty = ylen
+  endx = srtx + cntx - 1
+  endy = srty + cnty - 1
 
 else
 
-  call parsecoords(coordstring,boundingbox)
- 
-  srtx = nint(boundingbox(1))
-  srty = nint(boundingbox(3))
-  cntx = 1 + nint(boundingbox(2) - boundingbox(1))
-  cnty = 1 + nint(boundingbox(4) - boundingbox(3))
+  if (verbose) print*, " -  Calculating coordstring subset"
 
+  call parsecoords(coordstring, boundingbox)
+  call calcpixels(all_lon, all_lat, boundingbox, srtx, srty, cntx, cnty)
+  
+  if (verbose) then
+    print*, " -  Using longitudes:", all_lon(srtx), " - ", all_lon(srtx +  cntx)
+    print*, " -  Using latitudes:", all_lat(srty), " - ", all_lat(srty +  cnty) 
+  end if
+
+  endx = srtx + cntx - 1
+  endy = srty + cnty - 1
+  
 end if
 
-endx = srtx + cntx - 1
-endy = srty + cnty - 1
- 
-write(0,*)srtx,srty,cntx,cnty
-
-allocate(elv(cntx,cnty))
-allocate(tmin(cntx,cnty))
+allocate(lon(cntx))
+allocate(lat(cnty))
+lon = all_lon(srtx:endx)
+lat = all_lat(srty:endy)
 
 allocate(ivar(cntx,cnty,tlen))
 allocate(temp(cntx,cnty,tlen))
