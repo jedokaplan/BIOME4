@@ -162,15 +162,19 @@ allocate(cldp(cntx,cnty,tlen))
 !-------------------------------------------------------
 ! elevation
 
-status = nf90_inq_varid(ncid,'elv',varid)
+print *, 'Inquiring elevation variable'
+status = nf90_inq_varid(ncid, 'elv', varid)
 if (status == nf90_noerr) then
 
-  status = nf90_get_var(ncid,varid,elv,start=[srtx,srty],count=[cntx,cnty])
+  print *, 'Reading elevation variable'
+  status = nf90_get_var(ncid, varid, elv, start=[srtx, srty,1], count=[cntx, cnty])
   if (status /= nf90_noerr) call handle_err(status)
-  
+  print *, 'Read elevation variable'
+
 else
 
   elv = 0.
+  print *, 'Elevation variable not found, set to 0'
 
 end if
 
