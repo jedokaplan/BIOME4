@@ -35,8 +35,6 @@ integer(i2), allocatable, dimension(:,:)   :: wdom
 integer(i2), allocatable, dimension(:,:)   :: gdom
 real(sp),    allocatable, dimension(:,:,:) :: npp
 
-! real(sp),    allocatable, dimension(:,:)   :: lai
-
 real(sp) :: co2
 real(sp) :: p
 real(sp) :: iopt
@@ -83,7 +81,7 @@ real(sp), dimension(500) :: output
 integer :: ompchunk
 logical :: diag
 
-real(sp), dimension(2) :: rng
+real(sp), dimension(2) :: rng = [0.0_sp, 0.0_sp]
 
 namelist / joboptions / climatefile,soilfile,co2
 
@@ -124,9 +122,22 @@ if (status /= nf90_noerr) call handle_err(status)
 allocate(lon(xlen))
 allocate(lat(ylen))
 
+! Read longitude and latitude variables
+status = nf90_inq_varid(ncid, 'lon', varid)
+if (status /= nf90_noerr) call handle_err(status)
+
+status = nf90_get_var(ncid, varid, lon)
+if (status /= nf90_noerr) call handle_err(status)
+
+status = nf90_inq_varid(ncid, 'lat', varid)
+if (status /= nf90_noerr) call handle_err(status)
+
+status = nf90_get_var(ncid, varid, lat)
+if (status /= nf90_noerr) call handle_err(status)
+
 !-------------------------------------------------------
 
-call getarg(2,coordstring)
+call getarg(2, coordstring)
 
 if (coordstring == 'alldata') then
 
@@ -134,30 +145,34 @@ if (coordstring == 'alldata') then
   srty = 1
   cntx = xlen
   cnty = ylen
+  endx = srtx + cntx - 1
+  endy = srty + cnty - 1
 
 else
 
   call parsecoords(coordstring,boundingbox)
  
-  srtx = nint(boundingbox(1))
-  srty = nint(boundingbox(3))
-  cntx = 1 + nint(boundingbox(2) - boundingbox(1))
-  cnty = 1 + nint(boundingbox(4) - boundingbox(3))
+  srtx = 1
+  srty = 1
+  cntx = 4*boundingbox(2)
+  cnty = 4*boundingbox(4)
+  endx = cntx
+  endy = cnty
 
 end if
 
-endx = srtx + cntx - 1
-endy = srty + cnty - 1
- 
-write(0,*)srtx,srty,cntx,cnty
+! initialize default values for scale_factor, offset and missing values 
+scale_factor = 1.0
+add_offset = 0.0
+missing = -9999.0 
 
-allocate(elv(cntx,cnty))
-allocate(tmin(cntx,cnty))
+allocate(elv(cntx, cnty))
+allocate(tmin(cntx, cnty))
 
-allocate(ivar(cntx,cnty,tlen))
-allocate(temp(cntx,cnty,tlen))
-allocate(prec(cntx,cnty,tlen))
-allocate(cldp(cntx,cnty,tlen))
+allocate(ivar(cntx, cnty, tlen))
+allocate(temp(cntx, cnty, tlen))
+allocate(prec(cntx, cnty, tlen))
+allocate(cldp(cntx, cnty, tlen))
 
 !-------------------------------------------------------
 ! elevation
@@ -165,9 +180,9 @@ allocate(cldp(cntx,cnty,tlen))
 status = nf90_inq_varid(ncid,'elv',varid)
 if (status == nf90_noerr) then
 
-  status = nf90_get_var(ncid,varid,elv,start=[srtx,srty],count=[cntx,cnty])
+  status = nf90_get_var(ncid, varid, elv, start=[srtx, srty,1], count=[cntx, cnty])
   if (status /= nf90_noerr) call handle_err(status)
-  
+
 else
 
   elv = 0.
@@ -179,20 +194,34 @@ end if
 
 temp = -9999.
 
-status = nf90_inq_varid(ncid,'tmp',varid)
+status = nf90_inq_varid(ncid, 'temp', varid)
+if (status /= nf90_noerr) then
+    call handle_err(status)
+end if
+
+status = nf90_get_var(ncid, varid, ivar, start=[srtx, srty,1], count=[cntx, cnty, tlen]) 
 if (status /= nf90_noerr) call handle_err(status)
 
-status = nf90_get_var(ncid,varid,ivar,start=[srtx,srty,1],count=[cntx,cnty,tlen])
-if (status /= nf90_noerr) call handle_err(status)
-
+! Check and get 'scale_factor' if it exists
 status = nf90_get_att(ncid,varid,'scale_factor',scale_factor)
-if (status /= nf90_noerr) call handle_err(status)
+if (status == nf90_noerr) then
+  status = nf90_get_att(ncid, varid, 'scale_factor',scale_factor)
+  if (status /= nf90_noerr) call handle_err(status)
+end if
 
+! Check and get 'add_offset' attribute if it exists
 status = nf90_get_att(ncid,varid,'add_offset',add_offset)
-if (status /= nf90_noerr) call handle_err(status)
+if (status == nf90_noerr) then
+  status = nf90_get_att(ncid, varid,'add_offset',add_offset)
+  if (status /= nf90_noerr) call handle_err(status)
+end if
 
-status = nf90_get_att(ncid,varid,'missing_value',missing)
-if (status /= nf90_noerr) call handle_err(status)
+! Check and get 'missing_value' attribute if it exists
+status = nf90_get_att(ncid, varid,'missing_value',missing)
+if (status == nf90_noerr) then
+  status = nf90_get_att(ncid, varid,'missing_value',missing)
+  if (status /= nf90_noerr) call handle_err(status)
+end if
 
 where (ivar /= missing)
   temp = real(ivar) * scale_factor + add_offset
@@ -203,20 +232,34 @@ end where
 
 prec = -9999.
 
-status = nf90_inq_varid(ncid,'pre',varid)
+status = nf90_inq_varid(ncid, 'prec', varid)
+if (status /= nf90_noerr) then
+    call handle_err(status)
+end if
+
+status = nf90_get_var(ncid, varid, ivar, start=[srtx, srty,1],  count=[cntx, cnty, tlen])
 if (status /= nf90_noerr) call handle_err(status)
 
-status = nf90_get_var(ncid,varid,ivar,start=[srtx,srty,1],count=[cntx,cnty,tlen])
-if (status /= nf90_noerr) call handle_err(status)
-
+! Check and get 'scale_factor' if it exists
 status = nf90_get_att(ncid,varid,'scale_factor',scale_factor)
-if (status /= nf90_noerr) call handle_err(status)
+if (status == nf90_noerr) then
+  status = nf90_get_att(ncid, varid, 'scale_factor',scale_factor)
+  if (status /= nf90_noerr) call handle_err(status)
+end if
 
+! Check and get 'add_offset' attribute if it exists
 status = nf90_get_att(ncid,varid,'add_offset',add_offset)
-if (status /= nf90_noerr) call handle_err(status)
+if (status == nf90_noerr) then
+  status = nf90_get_att(ncid, varid, 'add_offset',add_offset)
+  if (status /= nf90_noerr) call handle_err(status)
+end if
 
-status = nf90_get_att(ncid,varid,'missing_value',missing)
-if (status /= nf90_noerr) call handle_err(status)
+! Check and get 'missing_value' attribute if it exists
+status = nf90_get_att(ncid, varid, 'missing_value', missing)
+if (status == nf90_noerr) then
+  status = nf90_get_att(ncid, varid, 'missing_value', missing)
+  if (status /= nf90_noerr) call handle_err(status)
+end if
 
 where (ivar /= missing)
   prec = real(ivar) * scale_factor + add_offset
@@ -227,20 +270,34 @@ end where
 
 cldp = -9999.
 
-status = nf90_inq_varid(ncid,'cld',varid)
+status = nf90_inq_varid(ncid, 'sun', varid)
+if (status /= nf90_noerr) then
+    call handle_err(status)
+end if
+
+status = nf90_get_var(ncid, varid, ivar, start=[srtx, srty,1], count=[cntx, cnty, tlen])
 if (status /= nf90_noerr) call handle_err(status)
 
-status = nf90_get_var(ncid,varid,ivar,start=[srtx,srty,1],count=[cntx,cnty,tlen])
-if (status /= nf90_noerr) call handle_err(status)
-
+! Check and get 'scale_factor' if it exists
 status = nf90_get_att(ncid,varid,'scale_factor',scale_factor)
-if (status /= nf90_noerr) call handle_err(status)
+if (status == nf90_noerr) then
+  status = nf90_get_att(ncid, varid, 'scale_factor',scale_factor)
+  if (status /= nf90_noerr) call handle_err(status)
+end if
 
+! Check and get 'add_offset' attribute if it exists
 status = nf90_get_att(ncid,varid,'add_offset',add_offset)
-if (status /= nf90_noerr) call handle_err(status)
+if (status == nf90_noerr) then
+  status = nf90_get_att(ncid, varid, 'add_offset', add_offset)
+  if (status /= nf90_noerr) call handle_err(status)
+end if
 
-status = nf90_get_att(ncid,varid,'missing_value',missing)
-if (status /= nf90_noerr) call handle_err(status)
+! Check and get 'missing_value' attribute if it exists
+status = nf90_get_att(ncid, varid, 'missing_value', missing)
+if (status == nf90_noerr) then
+  status = nf90_get_att(ncid, varid, 'missing_value', missing)
+  if (status /= nf90_noerr) call handle_err(status)
+end if
 
 where (ivar /= missing)
   cldp = real(ivar) * scale_factor + add_offset
@@ -251,20 +308,32 @@ end where
 
 tmin = -9999.
 
-status = nf90_inq_varid(ncid,'cld',varid)
+status = nf90_inq_varid(ncid, 'tmin', varid)
 if (status == nf90_noerr) then ! tmin is present, we will read it from the file 
 
-  status = nf90_get_var(ncid,varid,ivar(:,:,1),start=[srtx,srty,1],count=[cntx,cnty])
+  status = nf90_get_var(ncid, varid, ivar(:,:,1), start=[srtx, srty,1], count=[cntx, cnty])
   if (status /= nf90_noerr) call handle_err(status)
 
+  ! Check and get 'scale_factor' if it exists
   status = nf90_get_att(ncid,varid,'scale_factor',scale_factor)
-  if (status /= nf90_noerr) call handle_err(status)
+  if (status == nf90_noerr) then
+    status = nf90_get_att(ncid, varid, 'scale_factor',scale_factor)
+    if (status /= nf90_noerr) call handle_err(status)
+  end if
 
+  ! Check and get 'add_offset' attribute if it exists
   status = nf90_get_att(ncid,varid,'add_offset',add_offset)
-  if (status /= nf90_noerr) call handle_err(status)
+  if (status == nf90_noerr) then
+    status = nf90_get_att(ncid, varid, 'add_offset', add_offset)
+    if (status /= nf90_noerr) call handle_err(status)
+  end if
 
-  status = nf90_get_att(ncid,varid,'missing_value',missing)
-  if (status /= nf90_noerr) call handle_err(status)
+  ! Check and get 'missing_value' attribute if it exists
+  status = nf90_get_att(ncid, varid, 'missing_value', missing)
+  if (status == nf90_noerr) then
+    status = nf90_get_att(ncid, varid, 'missing_value', missing)
+    if (status /= nf90_noerr) call handle_err(status)
+  end if
 
   where (ivar(:,:,1) /= missing)
     tmin = real(ivar(:,:,1)) * scale_factor + add_offset
@@ -289,31 +358,32 @@ end if
 !-------------------------------------------------------
 
 status = nf90_close(ncid)
+if (status /= nf90_noerr) call handle_err(status)
 
 !-------------------------------------------------------
 
-status = nf90_open(soilfile,nf90_nowrite,ncid)
+status = nf90_open(soilfile, nf90_nowrite, ncid)
 if (status /= nf90_noerr) call handle_err(status)
 
-status = nf90_inq_dimid(ncid,'layer',dimid)
+status = nf90_inq_dimid(ncid, 'soil_layer', dimid)
 if (status /= nf90_noerr) call handle_err(status)
 
-status = nf90_inquire_dimension(ncid,dimid,len=llen)
+status = nf90_inquire_dimension(ncid, dimid, len=llen)
 if (status /= nf90_noerr) call handle_err(status)
 
-allocate(whc(cntx,cnty,llen))
-allocate(ksat(cntx,cnty,llen))
+allocate(whc(cntx, cnty, llen))
+allocate(ksat(cntx, cnty, llen))
 
-status = nf90_inq_varid(ncid,'whc',varid)
+status = nf90_inq_varid(ncid, 'whc', varid)
 if (status /= nf90_noerr) call handle_err(status)
 
-status = nf90_get_var(ncid,varid,whc,start=[srtx,srty,1],count=[cntx,cnty,llen])
+status = nf90_get_var(ncid, varid, whc, start=[srtx, srty,1], count=[cntx, cnty, llen])
 if (status /= nf90_noerr) call handle_err(status)
 
-status = nf90_inq_varid(ncid,'perc',varid)
+status = nf90_inq_varid(ncid, 'perc', varid)
 if (status /= nf90_noerr) call handle_err(status)
 
-status = nf90_get_var(ncid,varid,ksat,start=[srtx,srty,1],count=[cntx,cnty,llen])
+status = nf90_get_var(ncid, varid, ksat, start=[srtx, srty,1], count=[cntx, cnty, llen])
 if (status /= nf90_noerr) call handle_err(status)
 
 status = nf90_close(ncid)
@@ -333,10 +403,10 @@ end if
 
 !-------------------------------------------------------
 
-allocate(biome(cntx,cnty))
-allocate(wdom(cntx,cnty))
-allocate(gdom(cntx,cnty))
-allocate(npp(cntx,cnty,13))
+allocate(biome(cntx, cnty))
+allocate(wdom(cntx, cnty))
+allocate(gdom(cntx, cnty))
+allocate(npp(cntx, cnty, 13))
 
 biome = missing
 wdom  = missing
@@ -442,23 +512,23 @@ if (status /= nf90_noerr) call handle_err(status)
 status = nf90_inq_varid(ncid,'wdom',varid)
 if (status /= nf90_noerr) call handle_err(status)
 
-status = nf90_put_var(ncid,varid,wdom)
+status = nf90_put_var(ncid, varid, wdom, start=[srtx, srty,1], count=[cntx, cnty, llen])
 if (status /= nf90_noerr) call handle_err(status)
 
 ! ---
 
-status = nf90_inq_varid(ncid,'gdom',varid)
+status = nf90_inq_varid(ncid, 'gdom', varid)
 if (status /= nf90_noerr) call handle_err(status)
 
-status = nf90_put_var(ncid,varid,gdom)
+status = nf90_put_var(ncid, varid, gdom, start=[srtx, srty,1], count=[cntx, cnty, llen])
 if (status /= nf90_noerr) call handle_err(status)
 
 ! ---
 
-status = nf90_inq_varid(ncid,'npp',varid)
+status = nf90_inq_varid(ncid, 'npp', varid)
 if (status /= nf90_noerr) call handle_err(status)
 
-status = nf90_put_var(ncid,varid,npp)
+status = nf90_put_var(ncid, varid, npp,start=[srtx, srty,1], count=[cntx, cnty, llen])
 if (status /= nf90_noerr) call handle_err(status)
 
 ! ---
