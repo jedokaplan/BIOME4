@@ -20,6 +20,8 @@ real(sp), parameter :: R0 =      8.314462618  ! universal gas constant (J mol-1 
 real(dp),    allocatable, dimension(:)   :: lon
 real(dp),    allocatable, dimension(:)   :: lat
 
+real(sp),    allocatable, dimension(:)   :: dz
+
 real(sp),    allocatable, dimension(:,:)   :: elv
 real(sp),    allocatable, dimension(:,:)   :: tcm
 real(sp),    allocatable, dimension(:,:)   :: tmin
@@ -61,7 +63,9 @@ integer :: endy
 
 real(sp)    :: scale_factor
 real(sp)    :: add_offset
-integer(i2) :: missing
+integer(i2) :: missval_i2
+
+real(sp), parameter :: missval_sp = -9999.
 
 character(100) :: jobfile
 character(100) :: climatefile
@@ -84,6 +88,13 @@ integer :: ompchunk
 logical :: diag
 
 real(sp), dimension(2) :: rng
+
+real(dp) :: xres
+real(dp) :: yres
+real(dp) :: minlon
+real(dp) :: maxlon
+real(dp) :: minlat
+real(dp) :: maxlat
 
 namelist / joboptions / climatefile,soilfile,co2
 
@@ -124,6 +135,26 @@ if (status /= nf90_noerr) call handle_err(status)
 allocate(lon(xlen))
 allocate(lat(ylen))
 
+status = nf90_inq_varid(ncid,'lon',varid)
+if (status /= nf90_noerr) call handle_err(status)
+
+status = nf90_get_var(ncid,varid,lon)
+if (status /= nf90_noerr) call handle_err(status)
+
+status = nf90_inq_varid(ncid,'lat',varid)
+if (status /= nf90_noerr) call handle_err(status)
+
+status = nf90_get_var(ncid,varid,lat)
+if (status /= nf90_noerr) call handle_err(status)
+
+xres = lon(2) - lon(1)
+yres = lat(2) - lat(1)
+
+minlon = lon(1) - 0.5 * xres
+maxlon = lon(xlen) + 0.5 * xres
+minlat = lat(1) - 0.5 * yres
+maxlat = lat(ylen) + 0.5 * yres
+
 !-------------------------------------------------------
 
 call getarg(2,coordstring)
@@ -149,7 +180,8 @@ end if
 endx = srtx + cntx - 1
 endy = srty + cnty - 1
  
-write(0,*)srtx,srty,cntx,cnty
+write(0,'(i0,a,i0,a,i0,a)')cntx,' x ',cnty,' = ',cntx*cnty,' pixels'
+write(0,'(a,i0,a,i0)')'starting at: ',srtx,', ',srty
 
 allocate(elv(cntx,cnty))
 allocate(tmin(cntx,cnty))
@@ -177,7 +209,7 @@ end if
 !-------------------------------------------------------
 ! temperature
 
-temp = -9999.
+temp = missval_sp
 
 status = nf90_inq_varid(ncid,'tmp',varid)
 if (status /= nf90_noerr) call handle_err(status)
@@ -191,17 +223,19 @@ if (status /= nf90_noerr) call handle_err(status)
 status = nf90_get_att(ncid,varid,'add_offset',add_offset)
 if (status /= nf90_noerr) call handle_err(status)
 
-status = nf90_get_att(ncid,varid,'missing_value',missing)
+status = nf90_get_att(ncid,varid,'missing_value',missval_i2)
 if (status /= nf90_noerr) call handle_err(status)
 
-where (ivar /= missing)
+where (ivar /= missval_i2)
   temp = real(ivar) * scale_factor + add_offset
 end where
+
+write(0,*)'temp range: ',minval(temp,mask=temp/=missval_sp),maxval(temp,mask=temp/=missval_sp)
 
 !-------------------------------------------------------
 ! precipitation
 
-prec = -9999.
+prec = missval_sp
 
 status = nf90_inq_varid(ncid,'pre',varid)
 if (status /= nf90_noerr) call handle_err(status)
@@ -215,17 +249,19 @@ if (status /= nf90_noerr) call handle_err(status)
 status = nf90_get_att(ncid,varid,'add_offset',add_offset)
 if (status /= nf90_noerr) call handle_err(status)
 
-status = nf90_get_att(ncid,varid,'missing_value',missing)
+status = nf90_get_att(ncid,varid,'missing_value',missval_i2)
 if (status /= nf90_noerr) call handle_err(status)
 
-where (ivar /= missing)
+where (ivar /= missval_i2)
   prec = real(ivar) * scale_factor + add_offset
 end where
+
+write(0,*)'prec range: ',minval(prec,mask=prec/=missval_sp),maxval(prec,mask=prec/=missval_sp)
 
 !-------------------------------------------------------
 ! cloud percent
 
-cldp = -9999.
+cldp = missval_sp
 
 status = nf90_inq_varid(ncid,'cld',varid)
 if (status /= nf90_noerr) call handle_err(status)
@@ -239,19 +275,22 @@ if (status /= nf90_noerr) call handle_err(status)
 status = nf90_get_att(ncid,varid,'add_offset',add_offset)
 if (status /= nf90_noerr) call handle_err(status)
 
-status = nf90_get_att(ncid,varid,'missing_value',missing)
+status = nf90_get_att(ncid,varid,'missing_value',missval_i2)
 if (status /= nf90_noerr) call handle_err(status)
 
-where (ivar /= missing)
+where (ivar /= missval_i2)
   cldp = real(ivar) * scale_factor + add_offset
+  cldp = cldp * 100.
 end where
+
+write(0,*)'cldp range: ',minval(cldp,mask=cldp/=missval_sp),maxval(cldp,mask=cldp/=missval_sp)
 
 !-------------------------------------------------------
 ! absolute minimum temperature
 
-tmin = -9999.
+tmin = missval_sp
 
-status = nf90_inq_varid(ncid,'cld',varid)
+status = nf90_inq_varid(ncid,'tmin',varid)
 if (status == nf90_noerr) then ! tmin is present, we will read it from the file 
 
   status = nf90_get_var(ncid,varid,ivar(:,:,1),start=[srtx,srty,1],count=[cntx,cnty])
@@ -263,20 +302,22 @@ if (status == nf90_noerr) then ! tmin is present, we will read it from the file
   status = nf90_get_att(ncid,varid,'add_offset',add_offset)
   if (status /= nf90_noerr) call handle_err(status)
 
-  status = nf90_get_att(ncid,varid,'missing_value',missing)
+  status = nf90_get_att(ncid,varid,'missing_value',missval_i2)
   if (status /= nf90_noerr) call handle_err(status)
 
-  where (ivar(:,:,1) /= missing)
+  where (ivar(:,:,1) /= missval_i2)
     tmin = real(ivar(:,:,1)) * scale_factor + add_offset
   end where
 
 else ! tmin is not present in the input, we will estimate it base on temperature
 
+  write(0,*)'NB: Using calculated Tmin'
+
   allocate(tcm(cntx,cnty))
 
   tcm = minval(temp,dim=3)
 
-  where (tcm /= -9999.)
+  where (tcm /= missval_sp)
 
     tmin = 0.006 * tcm**2 + 1.316 * tcm - 21.9
 
@@ -295,14 +336,23 @@ status = nf90_close(ncid)
 status = nf90_open(soilfile,nf90_nowrite,ncid)
 if (status /= nf90_noerr) call handle_err(status)
 
-status = nf90_inq_dimid(ncid,'layer',dimid)
+status = nf90_inq_dimid(ncid,'zpos',dimid)
 if (status /= nf90_noerr) call handle_err(status)
 
 status = nf90_inquire_dimension(ncid,dimid,len=llen)
 if (status /= nf90_noerr) call handle_err(status)
 
+allocate(dz(llen))
 allocate(whc(cntx,cnty,llen))
 allocate(ksat(cntx,cnty,llen))
+
+status = nf90_inq_varid(ncid,'dz',varid)
+if (status /= nf90_noerr) call handle_err(status)
+
+status = nf90_get_var(ncid,varid,dz)
+if (status /= nf90_noerr) call handle_err(status)
+
+dz = dz / 100. ! convert cm into m
 
 status = nf90_inq_varid(ncid,'whc',varid)
 if (status /= nf90_noerr) call handle_err(status)
@@ -331,6 +381,24 @@ else
   diag = .false.  ! iopt
 end if
 
+status = nf90_inq_varid(ncid,'lon',varid)
+if (status /= nf90_noerr) call handle_err(status)
+
+status = nf90_put_var(ncid,varid,lon)
+if (status /= nf90_noerr) call handle_err(status)
+
+status = nf90_put_att(ncid,varid,'actual_range',[minlon,maxlon])
+if (status /= nf90_noerr) call handle_err(status)
+
+status = nf90_inq_varid(ncid,'lat',varid)
+if (status /= nf90_noerr) call handle_err(status)
+
+status = nf90_put_var(ncid,varid,lat)
+if (status /= nf90_noerr) call handle_err(status)
+
+status = nf90_put_att(ncid,varid,'actual_range',[minlat,maxlat])
+if (status /= nf90_noerr) call handle_err(status)
+
 !-------------------------------------------------------
 
 allocate(biome(cntx,cnty))
@@ -338,16 +406,16 @@ allocate(wdom(cntx,cnty))
 allocate(gdom(cntx,cnty))
 allocate(npp(cntx,cnty,13))
 
-biome = missing
-wdom  = missing
-gdom  = missing
-npp   = -9999.
+biome = missval_i2
+wdom  = missval_i2
+gdom  = missval_i2
+npp   = missval_sp
 
-! lai = -9999.
+! lai = missval_sp
 
 do y = 1,cnty
 
-  write(0,*)' working on row ',y,'out of ',cnty
+  write(0,'(a,i0,a,i0)')' working on row ',y,' out of ',cnty
 
   ompchunk = 4 !min(8,sblock_out(2))
 
@@ -356,7 +424,7 @@ do y = 1,cnty
 
   do x = 1,cntx
   
-    if (temp(x,y,1) == -9999.) cycle
+    if (temp(x,y,1) == missval_sp .or. whc(x,y,1) == missval_sp) cycle
 
     p = p0 * (1. - (g * elv(x,y)) / (cp * T0))**(cp * M / R0)
   
@@ -369,8 +437,8 @@ do y = 1,cnty
     input(28:40) = cldp(x,y,:)
     input(41)    = sum(Ksat(x,y,1:3)) / 3.
     input(42)    = sum(Ksat(x,y,4:6)) / 3.
-    input(43)    = sum(whc(x,y,1:3))
-    input(44)    = sum(whc(x,y,4:6))
+    input(43)    = sum(whc(x,y,1:3) * dz(1:3))
+    input(44)    = sum(whc(x,y,4:6) * dz(4:6))
     input(49)    = lon(x)
     
     if (diag) then
@@ -383,7 +451,6 @@ do y = 1,cnty
         
     biome(x,y) = nint(output(1))
     wdom(x,y)  = nint(output(12))
-    gdom(x,y)  = nint(output(13))
     npp(x,y,:) = output(60:72)
     
   end do

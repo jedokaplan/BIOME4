@@ -1,12 +1,12 @@
 # makefile for BIOME4, summer 2020
 
 FC=gfortran
-FCFLAGS  = 
+FCFLAGS = -march=native -fopenmp -ftree-vectorize
 
 # use the command "nf-config --all" to find the location of your netCDF installation
 # and enter the path next to " --prefix    ->" on the line below
 
-netcdf=/home/public/easybuild/software/netCDF-Fortran/4.5.4-gompi-2021b
+netcdf=/home/public/easybuild/software/netCDF-Fortran/4.6.0-gompi-2022a
 
 # should not need to modify anything below this line
 
@@ -16,7 +16,7 @@ NC_LIB=$(netcdf)/lib
 NC_INC=$(netcdf)/include
 
 CPPFLAGS = -I$(NC_INC)
-LDFLAGS  = -L$(NC_LIB)
+LDFLAGS  = 
 LIBS     = -lnetcdff
 
 #---------------------------------------------
