@@ -194,6 +194,8 @@ allocate(cldp(cntx,cnty,tlen))
 !-------------------------------------------------------
 ! elevation
 
+write(0,*)'reading climate'
+
 status = nf90_inq_varid(ncid,'elv',varid)
 if (status == nf90_noerr) then
 
@@ -280,7 +282,6 @@ if (status /= nf90_noerr) call handle_err(status)
 
 where (ivar /= missval_i2)
   cldp = real(ivar) * scale_factor + add_offset
-  cldp = cldp * 100.
 end where
 
 write(0,*)'cldp range: ',minval(cldp,mask=cldp/=missval_sp),maxval(cldp,mask=cldp/=missval_sp)
@@ -333,10 +334,12 @@ status = nf90_close(ncid)
 
 !-------------------------------------------------------
 
+write(0,*)'reading soils'
+
 status = nf90_open(soilfile,nf90_nowrite,ncid)
 if (status /= nf90_noerr) call handle_err(status)
 
-status = nf90_inq_dimid(ncid,'zpos',dimid)
+status = nf90_inq_dimid(ncid,'depth',dimid)
 if (status /= nf90_noerr) call handle_err(status)
 
 status = nf90_inquire_dimension(ncid,dimid,len=llen)
@@ -360,7 +363,7 @@ if (status /= nf90_noerr) call handle_err(status)
 status = nf90_get_var(ncid,varid,whc,start=[srtx,srty,1],count=[cntx,cnty,llen])
 if (status /= nf90_noerr) call handle_err(status)
 
-status = nf90_inq_varid(ncid,'perc',varid)
+status = nf90_inq_varid(ncid,'Ksat',varid)
 if (status /= nf90_noerr) call handle_err(status)
 
 status = nf90_get_var(ncid,varid,ksat,start=[srtx,srty,1],count=[cntx,cnty,llen])
@@ -433,12 +436,12 @@ do y = 1,cnty
     input(3)     = p
     input(4)     = tmin(x,y)
     input(5:16)  = temp(x,y,:)
-    input(17:27) = prec(x,y,:)
-    input(28:40) = cldp(x,y,:)
-    input(41)    = sum(Ksat(x,y,1:3)) / 3.
-    input(42)    = sum(Ksat(x,y,4:6)) / 3.
-    input(43)    = sum(whc(x,y,1:3) * dz(1:3))
-    input(44)    = sum(whc(x,y,4:6) * dz(4:6))
+    input(17:28) = prec(x,y,:)
+    input(29:40) = cldp(x,y,:)
+    input(41)    = sum(Ksat(x,y,1:3) * dz(1:3)) / sum(dz(1:3))
+    input(42)    = sum(Ksat(x,y,4:6) * dz(4:6)) / sum(dz(4:6))
+    input(43)    = sum(whc(x,y,1:3))
+    input(44)    = sum(whc(x,y,4:6))
     input(49)    = lon(x)
     
     if (diag) then

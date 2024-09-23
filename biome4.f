@@ -1791,9 +1791,9 @@ c       outv(100+m)=nint(mlresp(m)*10.)
       outv(199)=nint(firedays)
       outv(200)=greendays
 
-      do i=1,40
-       outv(200+i)=nint(tendaylai(i)*100.)
-      end do
+C     do i=1,40
+C      outv(200+i)=nint(tendaylai(i)*100.)
+C     end do
       
       outv(450)=nint(meanKlit*100.)
       outv(451)=nint(meanKsoil*100.)
@@ -2071,7 +2071,7 @@ c       Damage gives the limitation of c4 photosynthesis by pi
         endif
         wif = damage*daytime/(2.*teta)
   
-        if (je.eq.0.0.and.jc.eq.0.0) then
+        if (je.le.0.0.or.jc.le.0.0) then
          grossphotc4=0.0
         else
          grossphotc4=wif*(je+jc-((je+jc)**2.-4.*teta*je*jc)**0.5)

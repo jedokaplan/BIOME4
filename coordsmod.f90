@@ -6,7 +6,7 @@ implicit none
 
 public  :: parsecoords
 public  :: calcpixels
-private :: nearest
+private :: getpos
 
 contains
 
@@ -69,10 +69,10 @@ integer :: endy
 
 !-------------------------
 
-srtx = nearest(bb(1),lon)
-srty = nearest(bb(2),lat)
-endx = nearest(bb(3),lon)
-endx = nearest(bb(4),lat)
+srtx = getpos(bb(1),lon)
+srty = getpos(bb(2),lat)
+endx = getpos(bb(3),lon)
+endx = getpos(bb(4),lat)
 
 cntx = max(endx - srtx,1)
 cnty = max(endy - srty,1)
@@ -81,7 +81,7 @@ end subroutine calcpixels
 
 !-----------------------------------------------------------------------------------------------
 
-integer function nearest(val,vect)
+integer function getpos(val,vect)
 
 real(dp) :: val
 real(dp), dimension(:) :: vect
@@ -90,9 +90,9 @@ integer, dimension(1) :: pos
 
 pos = minloc(abs(val-vect))
 
-nearest = pos(1)
+getpos = pos(1)
 
-end function nearest
+end function getpos
 
 !-----------------------------------------------------------------------------------------------
 
