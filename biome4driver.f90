@@ -310,7 +310,10 @@ if (status == nf90_noerr) then ! tmin is present, we will read it from the file
     tmin = real(ivar(:,:,1)) * scale_factor + add_offset
   end where
 
-else ! tmin is not present in the input, we will estimate it base on temperature
+else 
+  
+  ! if tmin is not present in the input climate files, we will estimate it based on the temperature of the coldest month
+  ! following Prentice et al. (Eqn. 1, J. Biogeog., 1992)
 
   write(0,*)'NB: Using calculated Tmin'
 

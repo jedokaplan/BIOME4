@@ -105,7 +105,7 @@ else
 fi
 
 FCFLAGS="$FCFLAGS -I$NETCDF_FCFLAGS"
-
+FFLAGS="$FCFLAGS"
 
 # -----------------------------------------------------------------------
 

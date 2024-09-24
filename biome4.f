@@ -1863,7 +1863,7 @@ c      Because of temperature optimization (and maybe nitrogen limitations)
 c      this value is PFT specific.
 
         mintemp=t0(pft)
-        if (temp.gt.mintemp+0.1) then   !the +0.1 is here to prevent underflows
+        if (temp.gt.mintemp+1.) then   !the +1 is here to prevent underflows
          tstress=tcurve(pft)*exp(-10.0/(temp-mintemp))
         else
          tstress=0.0
@@ -2007,7 +2007,7 @@ c      this value is PFT specific.
 
         mintemp=t0(pft)
         maxtemp=55.0
-        if (temp.gt.mintemp+0.1.and.temp.lt.maxtemp) then
+        if (temp.gt.mintemp+1.and.temp.lt.maxtemp) then
          tstress=exp(-10.0/(temp-mintemp))
         else
          tstress=0.0
@@ -2071,7 +2071,7 @@ c       Damage gives the limitation of c4 photosynthesis by pi
         endif
         wif = damage*daytime/(2.*teta)
   
-        if (je.le.0.0.or.jc.le.0.0) then
+        if (je.eq.0.0.and.jc.eq.0.0) then
          grossphotc4=0.0
         else
          grossphotc4=wif*(je+jc-((je+jc)**2.-4.*teta*je*jc)**0.5)
