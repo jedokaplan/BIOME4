@@ -3,6 +3,7 @@ ACLOCAL_AMFLAGS = -I m4
 bin_PROGRAMS = biome4
 
 biome4_SOURCES =     \
+  overprint.c        \
   parametersmod.f90  \
   netcdfmod.f90      \
   coordsmod.f90      \

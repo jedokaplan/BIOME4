@@ -67,17 +67,17 @@ integer(i2) :: missval_i2
 
 real(sp), parameter :: missval_sp = -9999.
 
-character(100) :: jobfile
-character(100) :: climatefile
-character(100) :: soilfile
-character(100) :: outfile
+character(200) :: jobfile
+character(200) :: climatefile
+character(200) :: soilfile
+character(200) :: outfile
 
 character(45) :: coordstring
 
 real(dp), dimension(4) :: boundingbox
 
 integer :: x,y
-integer :: i,j
+integer :: i,j,l
 
 ! biome4 arguments; for catalog, see bottom of this code
 
@@ -87,8 +87,6 @@ real(sp), dimension(500) :: output
 integer :: ompchunk
 logical :: diag
 
-real(sp), dimension(2) :: rng
-
 real(dp) :: xres
 real(dp) :: yres
 real(dp) :: minlon
@@ -96,9 +94,16 @@ real(dp) :: maxlon
 real(dp) :: minlat
 real(dp) :: maxlat
 
+real(dp) :: gridres
+real(dp) :: halfres
+real(dp), dimension(2) :: lonrange
+real(dp), dimension(2) :: latrange
+
+character(60) :: status_line
+
 namelist / joboptions / climatefile,soilfile,co2
 
-!------------------------------------------------------------------------------------------------------------
+! ------------------------------------------------------------------------------------------------------------
 
 call getarg(1,jobfile)
 
@@ -108,7 +113,7 @@ read(10,nml=joboptions)
 
 close(10)
 
-!-------------------------------------------------------
+! -------------------------------------------------------
 ! input data file size
 
 status = nf90_open(climatefile,nf90_nowrite,ncid)
@@ -147,15 +152,7 @@ if (status /= nf90_noerr) call handle_err(status)
 status = nf90_get_var(ncid,varid,lat)
 if (status /= nf90_noerr) call handle_err(status)
 
-xres = lon(2) - lon(1)
-yres = lat(2) - lat(1)
-
-minlon = lon(1) - 0.5 * xres
-maxlon = lon(xlen) + 0.5 * xres
-minlat = lat(1) - 0.5 * yres
-maxlat = lat(ylen) + 0.5 * yres
-
-!-------------------------------------------------------
+! -------------------------------------------------------
 
 call getarg(2,coordstring)
 
@@ -180,8 +177,24 @@ end if
 endx = srtx + cntx - 1
 endy = srty + cnty - 1
  
-write(0,'(i0,a,i0,a,i0,a)')cntx,' x ',cnty,' = ',cntx*cnty,' pixels'
-write(0,'(a,i0,a,i0)')'starting at: ',srtx,', ',srty
+write(*,'(i0,a,i0,a,i0,a)')cntx,' x ',cnty,' = ',cntx*cnty,' pixels'
+write(*,'(a,i0,a,i0,2f10.6)')'starting at: ',srtx,', ',srty,lon(srtx),lat(srty)
+
+gridres = lon(2) - lon(1)
+halfres = gridres / 2._dp
+
+lonrange = [lon(srtx) - halfres,lon(endx) + halfres]
+
+write(*,*)'lon resolution:',gridres
+write(*,*)'output lon range:',lonrange
+
+gridres = lat(2) - lat(1)
+halfres = gridres / 2._dp
+
+latrange = [lat(srty) - halfres,lat(endy) + halfres]
+
+write(*,*)'lat resolution:',gridres
+write(*,*)'output lat range:',latrange
 
 allocate(elv(cntx,cnty))
 allocate(tmin(cntx,cnty))
@@ -191,10 +204,10 @@ allocate(temp(cntx,cnty,tlen))
 allocate(prec(cntx,cnty,tlen))
 allocate(cldp(cntx,cnty,tlen))
 
-!-------------------------------------------------------
+! -------------------------------------------------------
 ! elevation
 
-write(0,*)'reading climate'
+write(*,*)'reading climate: ',climatefile
 
 status = nf90_inq_varid(ncid,'elv',varid)
 if (status == nf90_noerr) then
@@ -208,7 +221,7 @@ else
 
 end if
 
-!-------------------------------------------------------
+! -------------------------------------------------------
 ! temperature
 
 temp = missval_sp
@@ -232,9 +245,9 @@ where (ivar /= missval_i2)
   temp = real(ivar) * scale_factor + add_offset
 end where
 
-write(0,*)'temp range: ',minval(temp,mask=temp/=missval_sp),maxval(temp,mask=temp/=missval_sp)
+write(*,*)'temp range: ',minval(temp,mask=temp/=missval_sp),maxval(temp,mask=temp/=missval_sp)
 
-!-------------------------------------------------------
+! -------------------------------------------------------
 ! precipitation
 
 prec = missval_sp
@@ -258,9 +271,9 @@ where (ivar /= missval_i2)
   prec = real(ivar) * scale_factor + add_offset
 end where
 
-write(0,*)'prec range: ',minval(prec,mask=prec/=missval_sp),maxval(prec,mask=prec/=missval_sp)
+write(*,*)'prec range: ',minval(prec,mask=prec/=missval_sp),maxval(prec,mask=prec/=missval_sp)
 
-!-------------------------------------------------------
+! -------------------------------------------------------
 ! cloud percent
 
 cldp = missval_sp
@@ -284,9 +297,9 @@ where (ivar /= missval_i2)
   cldp = real(ivar) * scale_factor + add_offset
 end where
 
-write(0,*)'cldp range: ',minval(cldp,mask=cldp/=missval_sp),maxval(cldp,mask=cldp/=missval_sp)
+write(*,*)'cldp range: ',minval(cldp,mask=cldp/=missval_sp),maxval(cldp,mask=cldp/=missval_sp)
 
-!-------------------------------------------------------
+! -------------------------------------------------------
 ! absolute minimum temperature
 
 tmin = missval_sp
@@ -315,7 +328,7 @@ else
   ! if tmin is not present in the input climate files, we will estimate it based on the temperature of the coldest month
   ! following Prentice et al. (Eqn. 1, J. Biogeog., 1992)
 
-  write(0,*)'NB: Using calculated Tmin'
+  write(*,*)'NB: Using calculated Tmin'
 
   allocate(tcm(cntx,cnty))
 
@@ -331,13 +344,13 @@ else
 
 end if
 
-!-------------------------------------------------------
+! -------------------------------------------------------
 
 status = nf90_close(ncid)
 
-!-------------------------------------------------------
+! -------------------------------------------------------
 
-write(0,*)'reading soils'
+write(*,*)'reading soils, layerinfo:'
 
 status = nf90_open(soilfile,nf90_nowrite,ncid)
 if (status /= nf90_noerr) call handle_err(status)
@@ -358,8 +371,6 @@ if (status /= nf90_noerr) call handle_err(status)
 status = nf90_get_var(ncid,varid,dz)
 if (status /= nf90_noerr) call handle_err(status)
 
-dz = dz / 100. ! convert cm into m
-
 status = nf90_inq_varid(ncid,'whc',varid)
 if (status /= nf90_noerr) call handle_err(status)
 
@@ -375,11 +386,15 @@ if (status /= nf90_noerr) call handle_err(status)
 status = nf90_close(ncid)
 if (status /= nf90_noerr) call handle_err(status)
 
-!-------------------------------------------------------
+do l = 1,llen
+  write(*,*)l,dz(l)
+end do
+
+! -------------------------------------------------------
 
 call getarg(3,outfile)
 
-call genoutfile(outfile,cntx,cnty,ncid)
+call genoutfile(jobfile,outfile,cntx,cnty,ncid)
 
 if (trim(outfile) == 'diag.nc') then
   diag = .true. ! iopt
@@ -387,25 +402,7 @@ else
   diag = .false.  ! iopt
 end if
 
-status = nf90_inq_varid(ncid,'lon',varid)
-if (status /= nf90_noerr) call handle_err(status)
-
-status = nf90_put_var(ncid,varid,lon)
-if (status /= nf90_noerr) call handle_err(status)
-
-status = nf90_put_att(ncid,varid,'actual_range',[minlon,maxlon])
-if (status /= nf90_noerr) call handle_err(status)
-
-status = nf90_inq_varid(ncid,'lat',varid)
-if (status /= nf90_noerr) call handle_err(status)
-
-status = nf90_put_var(ncid,varid,lat)
-if (status /= nf90_noerr) call handle_err(status)
-
-status = nf90_put_att(ncid,varid,'actual_range',[minlat,maxlat])
-if (status /= nf90_noerr) call handle_err(status)
-
-!-------------------------------------------------------
+! -------------------------------------------------------
 
 allocate(biome(cntx,cnty))
 allocate(wdom(cntx,cnty))
@@ -421,7 +418,8 @@ npp   = missval_sp
 
 do y = 1,cnty
 
-  write(0,'(a,i0,a,i0)')' working on row ',y,' out of ',cnty
+  write(status_line,'(a,i0,a,i0)')' working on row ',y,' out of ',cnty
+  call overprint(status_line)
 
   ompchunk = 4 !min(8,sblock_out(2))
 
@@ -443,8 +441,8 @@ do y = 1,cnty
     input(29:40) = cldp(x,y,:)
     input(41)    = sum(Ksat(x,y,1:3) * dz(1:3)) / sum(dz(1:3))
     input(42)    = sum(Ksat(x,y,4:6) * dz(4:6)) / sum(dz(4:6))
-    input(43)    = sum(whc(x,y,1:3))
-    input(44)    = sum(whc(x,y,4:6))
+    input(43)    = sum(whc(x,y,1:3)  * dz(1:3))                 ! input whc are in mm/cm
+    input(44)    = sum(whc(x,y,4:6)  * dz(4:6))
     input(49)    = lon(x)
     
     if (diag) then
@@ -466,9 +464,11 @@ do y = 1,cnty
 
 end do
 
-!-------------------------------------------------------
+write(0,*)
 
-write(0,*)'writing'
+! -------------------------------------------------------
+
+write(*,*)'writing'
 
 status = nf90_inq_varid(ncid,'lon',varid)
 if (status /= nf90_noerr) call handle_err(status)
@@ -476,9 +476,7 @@ if (status /= nf90_noerr) call handle_err(status)
 status = nf90_put_var(ncid,varid,lon(srtx:endx))
 if (status /= nf90_noerr) call handle_err(status)
 
-rng = [minval(lon(srtx:endx)),maxval(lon(srtx:endx))]
-
-status = nf90_put_att(ncid,varid,'actual_range',rng)
+status = nf90_put_att(ncid,varid,'actual_range',lonrange)
 if (status /= nf90_noerr) call handle_err(status)
 
 ! ---
@@ -489,9 +487,7 @@ if (status /= nf90_noerr) call handle_err(status)
 status = nf90_put_var(ncid,varid,lat(srty:endy))
 if (status /= nf90_noerr) call handle_err(status)
 
-rng = [minval(lat(srty:endy)),maxval(lat(srty:endy))]
-
-status = nf90_put_att(ncid,varid,'actual_range',rng)
+status = nf90_put_att(ncid,varid,'actual_range',latrange)
 if (status /= nf90_noerr) call handle_err(status)
 
 ! ---
@@ -539,11 +535,11 @@ if (status /= nf90_noerr) call handle_err(status)
 status = nf90_close(ncid)
 if (status /= nf90_noerr) call handle_err(status)
 
-!------------------------------------------------------------------------------------------------------------
+! ------------------------------------------------------------------------------------------------------------
 ! catalog of arguments 
-!---------------------------------------
+! ---------------------------------------
 ! input: real, dimension(50) :: vars_in(50)
-!---------------------------------------
+! ---------------------------------------
 ! 1        latitude
 ! 2        co2
 ! 3        air pressure
@@ -558,9 +554,9 @@ if (status /= nf90_noerr) call handle_err(status)
 ! 49       longitude
 ! 50       not used
 !
-!---------------------------------------
+! ---------------------------------------
 ! output: real, dimension(500) :: output
-!---------------------------------------
+! ---------------------------------------
 ! 1        biome
 ! 2        lai
 ! 3        npp
@@ -628,6 +624,6 @@ if (status /= nf90_noerr) call handle_err(status)
 ! 453      gdd0
 ! 454      gdd5
 ! 455-500  not used
-!------------------------------------------------------------------------------------------------------------
+! ------------------------------------------------------------------------------------------------------------
 
 end program biome4main
