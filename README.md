@@ -4,7 +4,21 @@
 
 This is the BIOME4 equilibrium global vegetation model, that was first used in experiments described in Kaplan et al. (2003). The computational core of the model was last updated in 1999, and at the time was called BIOME4 v4.2b2. 
 
-This GitHub repository contains the original FORTRAN77 computational core, a modernized driver program writen in Modern Fortran, a makefile, and a joboptions namelist file. The model input and output are netCDF files. Job options that name the input files and the atmospheric CO₂ concentration for the run are contained in a Fortran namelist file. A sample namelist `globalrun.namelist` is included in this archive. 
+This GitHub repository contains the original FORTRAN77 computational core, a modernized driver program writen in Modern Fortran, a makefile, and a joboptions namelist file. The model input and output are netCDF files. Job options that name the input files and the atmospheric CO₂ concentration for the run are contained in a Fortran namelist file. A sample namelist `globalrun.namelist` is included in this archive.
+
+## Building
+
+Building the code in this repository BIOME4 requires `autotools`, `pkg-config`, a fortran compiler, and the [netCDF-Fortran](https://github.com/Unidata/netcdf-fortran) libraries installed. To build from scratch after cloning the repo, 
+
+```
+autoreconf -if
+./configure
+make
+```
+
+On macOS, users have reported difficulties at the configure stage if netCDF-Fortran was installed with homebrew or macports. A workaround is to do a manual build/install of netCDF-Fortran, and then:
+
+`export PKG_CONFIG_PATH=<path_to_your_netCDF-Fortran_pkgconfig>` e.g., `/usr/local/lib/pkgconfig`
 
 ## Usage
 
