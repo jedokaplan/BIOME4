@@ -1,0 +1,33 @@
+# COLOR_MODEL = RGB
+# No RGB color Biome name
+1  0/102/26    ;Tropical evergreen broadleaf forest
+2  77/128/26   ;Tropical semi-evergreen broadleaf forest
+3  153/102/26  ;Tropical deciduous broadleaf forest and woodland
+4  0/200/0     ;Temperate deciduous broadleaf forest
+5  0/102/102   ;Temperate evergreen needleleaf forest
+6  0/26/128    ;Warm-temperate evergreen broadleaf and mixed forest
+7  204/255/204 ;Cool mixed forest
+8  0/153/51    ;Cool evergreen needleleaf forest
+9  128/51/77   ;Cool-temperate evergreen needleleaf and mixed forest
+10 26/26/230   ;Cold evergreen needleleaf forest
+11 51/204/255  ;Cold deciduous forest
+12 179/230/26  ;Tropical savanna
+13 255/179/153 ;Tropical xerophytic shrubland
+14 255/217/179 ;Temperate xerophytic shrubland
+15 102/153/0   ;Temperate sclerophyll woodland and shrubland
+16 204/204/0   ;Temperate deciduous broadleaf savanna
+17 255/153/230 ;Temperate evergreen needleleaf open woodland
+18 155/127/255 ;Cold parkland
+19 230/179/77  ;Tropical grassland
+20 255/229/127 ;Temperate grassland
+21 255/255/230 ;Desert
+22 230/230/0   ;Graminoid and forb tundra
+23 102/230/128 ;Low and high shrub tundra
+24 128/128/51  ;Erect dwarf-shrub tundra
+25 204/153/153 ;Prostrate dwarf-shrub tundra
+26 179/153/255 ;Cushion-forbs, lichens, and moss
+27 204/204/179 ;Barren
+28 204/255/255 ;Land ice
+B white
+F white
+N white

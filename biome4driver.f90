@@ -99,6 +99,8 @@ real(dp) :: halfres
 real(dp), dimension(2) :: lonrange
 real(dp), dimension(2) :: latrange
 
+logical :: sun = .false.
+
 character(60) :: status_line
 
 namelist / joboptions / climatefile,soilfile,co2
@@ -178,7 +180,7 @@ endx = srtx + cntx - 1
 endy = srty + cnty - 1
  
 write(*,'(i0,a,i0,a,i0,a)')cntx,' x ',cnty,' = ',cntx*cnty,' pixels'
-write(*,'(a,i0,a,i0,2f10.6)')'starting at: ',srtx,', ',srty,lon(srtx),lat(srty)
+write(*,'(a,i0,a,i0,a,f0.6,a,f0.6)')'starting at: ',srtx,', ',srty,' ',lon(srtx),' ',lat(srty)
 
 gridres = lon(2) - lon(1)
 halfres = gridres / 2._dp
@@ -279,7 +281,14 @@ write(*,*)'prec range: ',minval(prec,mask=prec/=missval_sp),maxval(prec,mask=pre
 cldp = missval_sp
 
 status = nf90_inq_varid(ncid,'cld',varid)
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) then
+
+  status = nf90_inq_varid(ncid,'sun',varid)
+  if (status /= nf90_noerr) call handle_err(status)
+  
+  sun = .true.
+
+end if  
 
 status = nf90_get_var(ncid,varid,ivar,start=[srtx,srty,1],count=[cntx,cnty,tlen])
 if (status /= nf90_noerr) call handle_err(status)
@@ -293,9 +302,19 @@ if (status /= nf90_noerr) call handle_err(status)
 status = nf90_get_att(ncid,varid,'missing_value',missval_i2)
 if (status /= nf90_noerr) call handle_err(status)
 
-where (ivar /= missval_i2)
-  cldp = real(ivar) * scale_factor + add_offset
-end where
+if (sun) then 
+
+  where (ivar /= missval_i2)
+    cldp = real(ivar) * scale_factor + add_offset
+  end where
+
+else
+
+  where (ivar /= missval_i2)
+    cldp = 100. - real(ivar) * scale_factor + add_offset
+  end where
+
+end if
 
 write(*,*)'cldp range: ',minval(cldp,mask=cldp/=missval_sp),maxval(cldp,mask=cldp/=missval_sp)
 
