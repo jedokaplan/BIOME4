@@ -84,7 +84,7 @@ integer :: i,j,l
 real(sp), dimension(50)  :: input
 real(sp), dimension(500) :: output
 
-integer :: ompchunk
+! integer :: ompchunk
 logical :: diag
 
 real(dp) :: xres
@@ -440,10 +440,8 @@ do y = 1,cnty
   write(status_line,'(a,i0,a,i0)')' working on row ',y,' out of ',cnty
   call overprint(status_line)
 
-  ompchunk = 4 !min(8,sblock_out(2))
-
   !$OMP PARALLEL DEFAULT(SHARED) PRIVATE(p,input,output)
-  !$OMP DO SCHEDULE(DYNAMIC,ompchunk)
+  !$OMP DO SCHEDULE(GUIDED)
 
   do x = 1,cntx
   
