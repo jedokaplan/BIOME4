@@ -35,9 +35,9 @@ real(sp),    allocatable, dimension(:,:,:) :: ksat
 integer(i2), allocatable, dimension(:,:)   :: biome
 integer(i2), allocatable, dimension(:,:)   :: wdom
 integer(i2), allocatable, dimension(:,:)   :: gdom
-real(sp),    allocatable, dimension(:,:,:) :: npp
 
-! real(sp),    allocatable, dimension(:,:)   :: lai
+real(sp),    allocatable, dimension(:,:,:) :: NPP
+real(sp),    allocatable, dimension(:,:,:) :: LAI
 
 real(sp) :: co2
 real(sp) :: p
@@ -270,7 +270,7 @@ status = nf90_get_att(ncid,varid,'missing_value',missval_i2)
 if (status /= nf90_noerr) call handle_err(status)
 
 where (ivar /= missval_i2)
-  prec = real(ivar) * scale_factor + add_offset
+  prec = max(real(ivar) * scale_factor + add_offset,0.)
 end where
 
 write(*,*)'prec range: ',minval(prec,mask=prec/=missval_sp),maxval(prec,mask=prec/=missval_sp)
@@ -369,7 +369,7 @@ status = nf90_close(ncid)
 
 ! -------------------------------------------------------
 
-write(*,*)'reading soils, layerinfo:'
+write(*,*)'reading soils, layer info:'
 
 status = nf90_open(soilfile,nf90_nowrite,ncid)
 if (status /= nf90_noerr) call handle_err(status)
@@ -425,13 +425,13 @@ end if
 
 allocate(biome(cntx,cnty))
 allocate(wdom(cntx,cnty))
-allocate(gdom(cntx,cnty))
-allocate(npp(cntx,cnty,13))
+allocate(NPP(cntx,cnty,13))
+allocate(LAI(cntx,cnty,13))
 
 biome = missval_i2
 wdom  = missval_i2
-gdom  = missval_i2
 npp   = missval_sp
+lai   = missval_sp
 
 ! lai = missval_sp
 
@@ -474,7 +474,9 @@ do y = 1,cnty
         
     biome(x,y) = nint(output(1))
     wdom(x,y)  = nint(output(12))
-    npp(x,y,:) = output(60:72)
+    
+    NPP(x,y,:) = output(301:313)
+    LAI(x,y,:) = output(314:326)
     
   end do
 
@@ -488,6 +490,9 @@ write(0,*)
 ! -------------------------------------------------------
 
 write(*,*)'writing'
+
+! ----------
+! coordinate variables
 
 status = nf90_inq_varid(ncid,'lon',varid)
 if (status /= nf90_noerr) call handle_err(status)
@@ -517,7 +522,11 @@ if (status /= nf90_noerr) call handle_err(status)
 status = nf90_put_var(ncid,varid,[(i,i=1,13)])
 if (status /= nf90_noerr) call handle_err(status)
 
+! ----------
+! regular variables
+
 ! ---
+! biome
 
 status = nf90_inq_varid(ncid,'biome',varid)
 if (status /= nf90_noerr) call handle_err(status)
@@ -526,6 +535,7 @@ status = nf90_put_var(ncid,varid,biome)
 if (status /= nf90_noerr) call handle_err(status)
 
 ! ---
+! woody dominant PFT
 
 status = nf90_inq_varid(ncid,'wdom',varid)
 if (status /= nf90_noerr) call handle_err(status)
@@ -534,19 +544,21 @@ status = nf90_put_var(ncid,varid,wdom)
 if (status /= nf90_noerr) call handle_err(status)
 
 ! ---
+! annual NPP by PFT
 
-status = nf90_inq_varid(ncid,'gdom',varid)
+status = nf90_inq_varid(ncid,'NPP',varid)
 if (status /= nf90_noerr) call handle_err(status)
 
-status = nf90_put_var(ncid,varid,gdom)
+status = nf90_put_var(ncid,varid,NPP)
 if (status /= nf90_noerr) call handle_err(status)
 
 ! ---
+! maximum LAI by PFT
 
-status = nf90_inq_varid(ncid,'npp',varid)
+status = nf90_inq_varid(ncid,'LAI',varid)
 if (status /= nf90_noerr) call handle_err(status)
 
-status = nf90_put_var(ncid,varid,npp)
+status = nf90_put_var(ncid,varid,LAI)
 if (status /= nf90_noerr) call handle_err(status)
 
 ! ---

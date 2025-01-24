@@ -56,6 +56,7 @@ real(dp), dimension(2) :: xrange = [0.,0.]
 real(dp), dimension(2) :: yrange = [0.,0.]
 
 ! ----------------------
+! general data
 
 call date_and_time(today,now)
 
@@ -168,7 +169,7 @@ chunks(4) = 1
 
 ! ----
 
-ncstat = nf90_def_var(ofid,'biome',nf90_short,dimids(1:2),varid,chunksizes=chunks(1:2),deflate_level=1,shuffle=.false.)
+ncstat = nf90_def_var(ofid,'biome',nf90_short,dimids(1:2),varid,chunksizes=chunks(1:2),deflate_level=1,shuffle=.true.)
 if (ncstat/=nf90_noerr) call handle_err(ncstat)
 
 ncstat = nf90_put_att(ofid,varid,'long_name','biome')
@@ -185,7 +186,7 @@ if (ncstat/=nf90_noerr) call handle_err(ncstat)
 
 ! ----
 
-ncstat = nf90_def_var(ofid,'wdom',nf90_short,dimids(1:2),varid,chunksizes=chunks(1:2),deflate_level=1,shuffle=.false.)
+ncstat = nf90_def_var(ofid,'wdom',nf90_short,dimids(1:2),varid,chunksizes=chunks(1:2),deflate_level=1,shuffle=.true.)
 if (ncstat/=nf90_noerr) call handle_err(ncstat)
 
 ncstat = nf90_put_att(ofid,varid,'long_name','dominant tree pft')
@@ -202,27 +203,10 @@ if (ncstat/=nf90_noerr) call handle_err(ncstat)
 
 ! ----
 
-ncstat = nf90_def_var(ofid,'gdom',nf90_short,dimids(1:2),varid,chunksizes=chunks(1:2),deflate_level=1,shuffle=.false.)
+ncstat = nf90_def_var(ofid,'NPP',nf90_float,dimids(1:3),varid,chunksizes=chunks(1:3),deflate_level=1,shuffle=.true.)
 if (ncstat/=nf90_noerr) call handle_err(ncstat)
 
-ncstat = nf90_put_att(ofid,varid,'long_name','dominant non-tree pft')
-if (ncstat/=nf90_noerr) call handle_err(ncstat)
-
-ncstat = nf90_put_att(ofid,varid,'units','PFT')
-if (ncstat/=nf90_noerr) call handle_err(ncstat)
-
-ncstat = nf90_put_att(ofid,varid,'_FillValue',missing)
-if (ncstat/=nf90_noerr) call handle_err(ncstat)
-
-ncstat = nf90_put_att(ofid,varid,'missing_value',missing)
-if (ncstat/=nf90_noerr) call handle_err(ncstat)
-
-! ----
-
-ncstat = nf90_def_var(ofid,'npp',nf90_float,dimids,varid,chunksizes=chunks,deflate_level=1,shuffle=.false.)
-if (ncstat/=nf90_noerr) call handle_err(ncstat)
-
-ncstat = nf90_put_att(ofid,varid,'long_name','net primary productivity')
+ncstat = nf90_put_att(ofid,varid,'long_name','Annual total Net Primary Productivity of the dominant PFT')
 if (ncstat/=nf90_noerr) call handle_err(ncstat)
 
 ncstat = nf90_put_att(ofid,varid,'units','g m-2')
@@ -236,37 +220,20 @@ if (ncstat/=nf90_noerr) call handle_err(ncstat)
 
 ! ----
 
-! ncstat = nf90_def_var(ofid,'lai',nf90_float,dimids,varid,chunksizes=chunks,deflate_level=1,shuffle=.false.)
-! if (ncstat/=nf90_noerr) call handle_err(ncstat)
-! 
-! ncstat = nf90_put_att(ofid,varid,'long_name','LAI')
-! if (ncstat/=nf90_noerr) call handle_err(ncstat)
-! 
-! ncstat = nf90_put_att(ofid,varid,'units','m2 m-2')
-! if (ncstat/=nf90_noerr) call handle_err(ncstat)
-! 
-! ncstat = nf90_put_att(ofid,varid,'_FillValue',-9999.)
-! if (ncstat/=nf90_noerr) call handle_err(ncstat)
-! 
-! ncstat = nf90_put_att(ofid,varid,'missing_value',-9999.)
-! if (ncstat/=nf90_noerr) call handle_err(ncstat)
+ncstat = nf90_def_var(ofid,'LAI',nf90_float,dimids(1:3),varid,chunksizes=chunks(1:3),deflate_level=1,shuffle=.true.)
+if (ncstat/=nf90_noerr) call handle_err(ncstat)
 
-! ----
+ncstat = nf90_put_att(ofid,varid,'long_name','Maximum annual Leaf Area Index of the dominant PFT')
+if (ncstat/=nf90_noerr) call handle_err(ncstat)
 
-! ncstat = nf90_def_var(ofid,'npp',nf90_float,dimids,varid,chunksizes=chunks,deflate_level=1,shuffle=.false.)
-! if (ncstat/=nf90_noerr) call handle_err(ncstat)
-! 
-! ncstat = nf90_put_att(ofid,varid,'long_name','NPP')
-! if (ncstat/=nf90_noerr) call handle_err(ncstat)
-! 
-! ncstat = nf90_put_att(ofid,varid,'units','gC m-2')
-! if (ncstat/=nf90_noerr) call handle_err(ncstat)
-! 
-! ncstat = nf90_put_att(ofid,varid,'_FillValue',-9999.)
-! if (ncstat/=nf90_noerr) call handle_err(ncstat)
-! 
-! ncstat = nf90_put_att(ofid,varid,'missing_value',-9999.)
-! if (ncstat/=nf90_noerr) call handle_err(ncstat)
+ncstat = nf90_put_att(ofid,varid,'units','m2 m-2')
+if (ncstat/=nf90_noerr) call handle_err(ncstat)
+
+ncstat = nf90_put_att(ofid,varid,'_FillValue',-9999.)
+if (ncstat/=nf90_noerr) call handle_err(ncstat)
+
+ncstat = nf90_put_att(ofid,varid,'missing_value',-9999.)
+if (ncstat/=nf90_noerr) call handle_err(ncstat)
 
 ! ----
 

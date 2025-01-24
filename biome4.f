@@ -311,8 +311,8 @@ c      Final output biome is given by the integer biome:
 
        do pft=1,numofpfts
        
-        output(300+pft)=nint(optnpp(pft))
-        output(300+numofpfts+pft)=nint(optlai(pft)*100.0)
+        output(300+pft)=optnpp(pft)
+        output(300+numofpfts+pft)=optlai(pft)
        
 c-----------------------
         if (pfts(pft).ne.0) then
