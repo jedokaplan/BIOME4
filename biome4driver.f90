@@ -440,7 +440,7 @@ do y = 1,cnty
 
     p = p0 * (1. - (g * elv(x,y)) / (cp * T0))**(cp * M / R0)
   
-    input(1)     = lat(y)
+    input(1)     = lat(y+srty-1)
     input(2)     = co2
     input(3)     = p
     input(4)     = tmin(x,y)
@@ -451,7 +451,7 @@ do y = 1,cnty
     input(42)    = sum(Ksat(x,y,4:6) * dz(4:6)) / sum(dz(4:6))
     input(43)    = sum(whc(x,y,1:3)  * dz(1:3))                 ! input whc are in mm/cm
     input(44)    = sum(whc(x,y,4:6)  * dz(4:6))
-    input(49)    = lon(x)
+    input(49)    = lon(x+srtx-1)
     
     if (diag) then
       input(46) = 1.  ! diagnostic mode on
