@@ -6,11 +6,11 @@ implicit none
 
 public  :: parsecoords
 public  :: calcpixels
-private :: getpos
+private :: pos
 
 contains
 
-!-----------------------------------------------------------------------------------------------
+! -----------------------------------------------------------------------------------------------
 
 subroutine parsecoords(coordstring,bb)
 
@@ -19,7 +19,7 @@ subroutine parsecoords(coordstring,bb)
 implicit none
 
 character(*),           intent(in)  :: coordstring  ! GMT-style coordinate string (separated by "/")
-real(dp), dimension(4), intent(out) :: bb           !bounding box in real numbers
+real(dp), dimension(4), intent(out) :: bb           ! bounding box in real numbers
 
 character(10), dimension(4) :: cval = '0'
 
@@ -47,7 +47,7 @@ end if
 
 end subroutine parsecoords
 
-!-----------------------------------------------------------------------------------------------
+! -----------------------------------------------------------------------------------------------
 
 subroutine calcpixels(lon,lat,bb,srtx,srty,cntx,cnty)
 
@@ -67,33 +67,29 @@ integer, intent(out) :: cnty
 integer :: endx
 integer :: endy
 
-!-------------------------
+! -------------------------
 
-srtx = getpos(bb(1),lon)
-srty = getpos(bb(2),lat)
-endx = getpos(bb(3),lon)
-endx = getpos(bb(4),lat)
+srtx = pos(bb(1),lon)
+endx = pos(bb(2),lon)
+srty = pos(bb(3),lat)
+endy = pos(bb(4),lat)
 
 cntx = max(endx - srtx,1)
 cnty = max(endy - srty,1)
 
 end subroutine calcpixels
 
-!-----------------------------------------------------------------------------------------------
+! -----------------------------------------------------------------------------------------------
 
-integer function getpos(val,vect)
+integer function pos(val,vect)
 
-real(dp) :: val
-real(dp), dimension(:) :: vect
+real(dp),               intent(in) :: val
+real(dp), dimension(:), intent(in) :: vect
 
-integer, dimension(1) :: pos
+pos = minloc(abs(val-vect),dim=1)
 
-pos = minloc(abs(val-vect))
+end function pos
 
-getpos = pos(1)
-
-end function getpos
-
-!-----------------------------------------------------------------------------------------------
+! -----------------------------------------------------------------------------------------------
 
 end module coordsmod

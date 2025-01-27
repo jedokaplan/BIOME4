@@ -85,7 +85,6 @@ real(sp), dimension(50)  :: input
 real(sp), dimension(500) :: output
 
 ! integer :: ompchunk
-logical :: diag
 
 real(dp) :: xres
 real(dp) :: yres
@@ -99,11 +98,12 @@ real(dp) :: halfres
 real(dp), dimension(2) :: lonrange
 real(dp), dimension(2) :: latrange
 
-logical :: sun = .false.
+logical :: sun  = .false.
+logical :: diag = .false.
 
 character(60) :: status_line
 
-namelist / joboptions / climatefile,soilfile,co2
+namelist / joboptions / climatefile,soilfile,co2,diag
 
 ! ------------------------------------------------------------------------------------------------------------
 
@@ -168,11 +168,8 @@ if (coordstring == 'alldata') then
 else
 
   call parsecoords(coordstring,boundingbox)
- 
-  srtx = nint(boundingbox(1))
-  srty = nint(boundingbox(3))
-  cntx = 1 + nint(boundingbox(2) - boundingbox(1))
-  cnty = 1 + nint(boundingbox(4) - boundingbox(3))
+
+  call calcpixels(lon,lat,boundingbox,srtx,srty,cntx,cnty)
 
 end if
 
@@ -414,12 +411,6 @@ end do
 call getarg(3,outfile)
 
 call genoutfile(jobfile,outfile,cntx,cnty,ncid)
-
-if (trim(outfile) == 'diag.nc') then
-  diag = .true. ! iopt
-else
-  diag = .false.  ! iopt
-end if
 
 ! -------------------------------------------------------
 
