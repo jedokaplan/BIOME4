@@ -239,7 +239,8 @@ c       so not using the pft saves computation time.
 c--------------------------------------------------------------------------
 
       if (diagmode) then
-
+       write(*,*)
+       write(*,*)
        write(*,'(A,F8.2,A,F8.2)')'Longitude:',lon,' Latitude:',lat
        write(*,'(A,F6.1,A,F6.1,A)')
      >    'Tcm and Tmin are:',tcm,' and',tmin,' degrees C respectively.'
@@ -250,8 +251,8 @@ c--------------------------------------------------------------------------
        write(*,'(A,2F7.2,3F7.1)')
      >    'The current soil parameters are:',soil
        write(*,'(A,$)')
-     >    'Enter new soil parameters? '
-       read(*,*)yorn
+     >    'Enter new soil parameters? (y/N) '
+       read(*,'(a)')yorn
        if (yorn.eq.'y') then
         write(*,'(A,$)')'Percolation index ~(0-7): '
         read(*,*)soil(1)
@@ -268,7 +269,8 @@ c       Reinitialize soil texture specific parameters
         k(6)=soil(4)
 
        end if
-       
+
+       write(*,*)
        write(*,*)'The following PFTs will be computed:'
 
       end if
@@ -685,6 +687,7 @@ c----------------------------------------------------------------------
 c     output some diagnostic results
 
       if (diagmode) then
+       write(*,*)'PFT mondry drySM meanSM dfire dgreen'
        do pft=1,numofpfts
         if (pfts(pft).ne.0) then
          write(*,4)
