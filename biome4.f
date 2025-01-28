@@ -190,10 +190,10 @@ c      Reset the output matrix
        end do
 c-------------------------------------------------------------------------
 c      Initialize soil texture specific parameters
-       k(1)=soil(1)
-       k(2)=soil(2)
-       k(5)=soil(3)
-       k(6)=soil(4)
+       k(1)=soil(1)  ! top layer Ksat (mm h-1)
+       k(2)=soil(2)  ! bottom layer Ksat (mm h-1)
+       k(5)=soil(3)  ! top layer whc (mm)
+       k(6)=soil(4)  ! bottom layer whc (mm)
 c-------------------------------------------------------------------------
 c      Linearly interpolate mid-month values to quasi-daily values:
        call daily(temp,dtemp)
@@ -242,14 +242,16 @@ c--------------------------------------------------------------------------
        write(*,*)
        write(*,*)
        write(*,'(A,F8.2,A,F8.2)')'Longitude:',lon,' Latitude:',lat
-       write(*,'(A,F6.1,A,F6.1,A)')
-     >    'Tcm and Tmin are:',tcm,' and',tmin,' degrees C respectively.'
+       write(*,'(A,3F6.1,A)')
+     >    'Tmin, Tcm, and Twm:',tmin,tcm,twm,' degrees C.'
        write(*,'(A,F8.1,A,F8.1,A)')
      >    'GDD5 is:',gdd5,' and total annual precip is:',tprec,' mm.'
        write(*,'(A,F8.1,A)')
      >    'Maximum snowdepth is:',maxdepth*10.,' mm.'
-       write(*,'(A,2F7.2,3F7.1)')
-     >    'The current soil parameters are:',soil
+       write(*,'(A)')'The current soil parameters are:'
+       write(*,'(A)')'   Ksat    whc'
+       write(*,'(F7.2,F7.1)')soil(1),soil(3)
+       write(*,'(F7.2,F7.1)')soil(2),soil(4)
        write(*,'(A,$)')
      >    'Enter new soil parameters? (y/N) '
        read(*,'(a)')yorn
