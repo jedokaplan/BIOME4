@@ -2846,7 +2846,7 @@ c     set up climate indices array:
       clindex(2)=tmin     !absolute minimum temperature
       clindex(3)=gdd5     !GDDays above 5 deg C
       clindex(4)=gdd0     !gdd0
-      clindex(5)=twm
+      clindex(5)=twm      !temperature of the warmest month
       clindex(6)=maxdepth !snow depth
 
 c Determines the values of the climatic indices are within the climatic limits 
