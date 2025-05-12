@@ -30,6 +30,10 @@ To run BIOME4 the following three arguments need to be specified on the command 
    
 Example: `./biome4 globalrun.namelist -180/180/-90/90 output.nc`
 
+## Mapping the output
+
+A plotting script `biome4worldmap.sh` and color lookup table `biome4legend.cpt` are provided with this repository. The color lookup table contains the canonical names for each biome and the color in which they should be plotted. This plotting script is intended to be used with the [Generic Mapping Tools](https://www.generic-mapping-tools.org/) software but the RGB color scheme could be adopted to other plotting/GIS tools.
+
 ## Input data
 BIOME4 requires the following variables to run (in the form of gridded fields):
 - climatological monthly mean fields of temperature (°C)
