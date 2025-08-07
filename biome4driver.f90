@@ -20,6 +20,9 @@ real(sp), parameter :: R0 =      8.314462618  ! universal gas constant (J mol-1 
 real(dp),    allocatable, dimension(:)   :: lon
 real(dp),    allocatable, dimension(:)   :: lat
 
+real(dp),    allocatable, dimension(:,:)   :: londeg
+real(dp),    allocatable, dimension(:,:)   :: latdeg
+
 real(sp),    allocatable, dimension(:)   :: dz
 
 real(sp),    allocatable, dimension(:,:)   :: elv
@@ -101,6 +104,8 @@ real(dp), dimension(2) :: latrange
 logical :: sun  = .false.
 logical :: diag = .false.
 
+logical :: projgrid = .false.
+
 character(60) :: status_line
 
 namelist / joboptions / climatefile,soilfile,co2,diag
@@ -122,12 +127,19 @@ status = nf90_open(climatefile,nf90_nowrite,ncid)
 if (status /= nf90_noerr) call handle_err(status)
 
 status = nf90_inq_dimid(ncid,'lon',dimid)
-if (status /= nf90_noerr) call handle_err(status)
+if (status /= nf90_noerr) then
+  status = nf90_inq_dimid(ncid,'x',dimid)
+  if (status /= nf90_noerr) call handle_err(status)
+  
+  projgrid = .true.
+
+end if
 
 status = nf90_inquire_dimension(ncid,dimid,len=xlen)
 if (status /= nf90_noerr) call handle_err(status)
 
 status = nf90_inq_dimid(ncid,'lat',dimid)
+if (status /= nf90_noerr) status = nf90_inq_dimid(ncid,'y',dimid)
 if (status /= nf90_noerr) call handle_err(status)
 
 status = nf90_inquire_dimension(ncid,dimid,len=ylen)
@@ -142,17 +154,52 @@ if (status /= nf90_noerr) call handle_err(status)
 allocate(lon(xlen))
 allocate(lat(ylen))
 
-status = nf90_inq_varid(ncid,'lon',varid)
-if (status /= nf90_noerr) call handle_err(status)
+if (projgrid) then
 
-status = nf90_get_var(ncid,varid,lon)
-if (status /= nf90_noerr) call handle_err(status)
+  write(0,*)"NB input data are on projected grid"
 
-status = nf90_inq_varid(ncid,'lat',varid)
-if (status /= nf90_noerr) call handle_err(status)
+  status = nf90_inq_varid(ncid,'x',varid)
+  if (status /= nf90_noerr) call handle_err(status)
+  
+  status = nf90_get_var(ncid,varid,lon)
+  if (status /= nf90_noerr) call handle_err(status)
+  
+  status = nf90_inq_varid(ncid,'y',varid)
+  if (status /= nf90_noerr) call handle_err(status)
+  
+  status = nf90_get_var(ncid,varid,lat)
+  if (status /= nf90_noerr) call handle_err(status)
 
-status = nf90_get_var(ncid,varid,lat)
-if (status /= nf90_noerr) call handle_err(status)
+  allocate(londeg(xlen,ylen))
+  allocate(latdeg(xlen,ylen))
+
+  status = nf90_inq_varid(ncid,'lon',varid)
+  if (status /= nf90_noerr) call handle_err(status)
+  
+  status = nf90_get_var(ncid,varid,londeg)
+  if (status /= nf90_noerr) call handle_err(status)
+  
+  status = nf90_inq_varid(ncid,'lat',varid)
+  if (status /= nf90_noerr) call handle_err(status)
+  
+  status = nf90_get_var(ncid,varid,latdeg)
+  if (status /= nf90_noerr) call handle_err(status)
+
+else
+
+  status = nf90_inq_varid(ncid,'lon',varid)
+  if (status /= nf90_noerr) call handle_err(status)
+  
+  status = nf90_get_var(ncid,varid,lon)
+  if (status /= nf90_noerr) call handle_err(status)
+  
+  status = nf90_inq_varid(ncid,'lat',varid)
+  if (status /= nf90_noerr) call handle_err(status)
+  
+  status = nf90_get_var(ncid,varid,lat)
+  if (status /= nf90_noerr) call handle_err(status)
+
+end if
 
 ! -------------------------------------------------------
 
@@ -439,8 +486,19 @@ do y = 1,cnty
     if (temp(x,y,1) == missval_sp .or. whc(x,y,1) == missval_sp) cycle
 
     p = p0 * (1. - (g * elv(x,y)) / (cp * T0))**(cp * M / R0)
+    
+    if (projgrid) then
+    
+      input(1)     = latdeg(x,y+srty-1)
+      input(49)    = londeg(x+srtx-1,y)
+    
+    else
+
+      input(1)     = lat(y+srty-1)
+      input(49)    = lon(x+srtx-1)
+
+    end if
   
-    input(1)     = lat(y+srty-1)
     input(2)     = co2
     input(3)     = p
     input(4)     = tmin(x,y)
@@ -451,7 +509,6 @@ do y = 1,cnty
     input(42)    = sum(Ksat(x,y,4:6) * dz(4:6)) / sum(dz(4:6))
     input(43)    = sum(whc(x,y,1:3)  * dz(1:3))                 ! input whc are in mm/cm
     input(44)    = sum(whc(x,y,4:6)  * dz(4:6))
-    input(49)    = lon(x+srtx-1)
     
     if (diag) then
       input(46) = 1.  ! diagnostic mode on
