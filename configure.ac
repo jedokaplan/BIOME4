@@ -36,7 +36,7 @@ AC_FC_SRCEXT(f90)
 
 # get the real name of the compiler
 
-FC_REALNAME=$NETCDF_FC
+FC_REALNAME=$($NETCDF_FC -show | awk '{print $1}')
 
 # set the linker flags
 
