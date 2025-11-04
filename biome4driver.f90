@@ -513,6 +513,9 @@ do y = 1,cnty
     
     if (diag) then
       input(46) = 1.  ! diagnostic mode on
+      
+      write(0,*)x,y,input(49),input(1)
+      
     else
       input(46) = 0.  ! diagnostic mode off
     end if

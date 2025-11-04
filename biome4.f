@@ -238,6 +238,8 @@ c       so not using the pft saves computation time.
 
 c--------------------------------------------------------------------------
 
+      yorn='n'
+
       if (diagmode) then
        write(*,*)
        write(*,*)
@@ -254,7 +256,7 @@ c--------------------------------------------------------------------------
        write(*,'(F7.2,F7.1)')soil(2),soil(4)
        write(*,'(A,$)')
      >    'Enter new soil parameters? (y/N) '
-       read(*,'(a)')yorn
+C      read(*,'(a)')yorn
        if (yorn.eq.'y') then
         write(*,'(A,$)')'Percolation index ~(0-7): '
         read(*,*)soil(1)
@@ -353,8 +355,8 @@ c-----------------------
        write(*,'(A,F6.2,A)')
      > 'The deltaA of C3 grass is',delag,' per mil.'
 
-       write(*,*)'press return to continue'
-       read(*,*)
+C      write(*,*)'press return to continue'
+C      read(*,*)
       end if
      
       return
@@ -713,8 +715,38 @@ c     put some variables into format for output
 
 c------------------------------------------------------
       if (optpft.eq.14) then
+
+       if (grassnpp.le.0.) then
+       
+         write(*,*)
+         write(*,*)'*** error in grass npp ***',woodnpp,grassnpp
+         write(*,*)
+
+
+       write(*,*)'PFT mondry drySM meanSM dfire dgreen'
+       do pft=1,numofpfts
+        if (pfts(pft).ne.0) then
+         write(*,4)
+     >   pft,drymonth(pft),driest(pft),wetness(pft),optdata(pft,199),
+     >   optdata(pft,200)
+        end if
+       end do
+
+       write(*,*)' wpft  woodynpp   woodylai gpft grassnpp subpft phi'
+       write(*,5)wdom,woodnpp,woodylai,grasspft,grassnpp,subpft,
+     >           optdata(8,52)/100.
+
+
+
+       stop
+
+
+
+        end if
+
       
        npprat=woodnpp/grassnpp
+       
 
        treepct=((8./5.)*npprat)-.54
        
@@ -2241,8 +2273,12 @@ c      calculates the actual values of gc and soil moisture
        real evap,runoffmonth(12)
 
        real pftpar(25,25)
+       real minw
 
        logical wilt
+       
+c      minimum value for soil moisture (to prevent underflow)
+       parameter(minw=1.e-5)
 
        parameter(alfam=1.4,gm=5.)
 c       parameter(onnw=0.4,offw=0.3)
@@ -2440,10 +2476,10 @@ c      If w1 is filled above fc then get surface or sub-surface runoff
         w(1) = 1.
        end if
 
-c      To prevent errors, set moisture back to wp
+c      To prevent math errors, set moisture back to wp
 
-       if (w(1).le.0.) w(1)=0. 
-       if (w(2).le.0.) w(2)=0.
+       if (w(1).le.minw) w(1)=0. 
+       if (w(2).le.minw) w(2)=0.
 
 c-----------------------------------------------------------------------  
        end if                 !the cold temp sensitive loop ends here
