@@ -426,6 +426,10 @@ c----Initialize all of the variables that index an array---
       maxdiffnpp=0.0
       grassnpp=0.0
 
+      do pft=1,12
+        wetratio(pft) = 0.
+      end do
+
 c------------------------------------------------------------------------
 
 c---- choose the dominant woody PFT on the basis of NPP:
@@ -447,10 +451,11 @@ c-----Find the PFTs with the highest npp and lai-------------------------
          maxnpp=optnpp(pft)
          pftmaxnpp=pft
         end if
+                
         if (optlai(pft).gt.maxlai) then
          maxlai=optlai(pft)
          pftmaxlai=pft
-        else if (optlai(pft).eq.maxlai) then
+        else if (optlai(pft).eq.maxlai.and.pftmaxnpp.gt.0) then
          maxlai=optlai(pftmaxnpp)
          pftmaxlai=pftmaxnpp
         end if
@@ -851,8 +856,10 @@ c       Total annual precipitation (hopefully<9999mm):
 
 c       Total annual PAR MJ.m-2.yr-1
         output(14)=optdata(dom,7)
+        
+        lairatio=0.  ! not used
 
-        output(15)=nint(100*lairatio)
+        output(15)=nint(100.*lairatio)
 
         output(16)=nint(nppdif)
 
@@ -1634,7 +1641,7 @@ c     calculate monthly NPP
       do m=1,11
        maintresp(m)=
      > mlresp(m)+backleafresp(m)+mstemresp(m)+mrootresp(m)
-       mgrowresp(m) = (0.02*(mgpp(m+1)-maintresp(m+1)))
+       mgrowresp(m) = (0.02*(mgpp(m)-maintresp(m)))      ! *** FLAG *** undefined variable, was m+1 don't know how this worked
         if (mgrowresp(m).lt.0.0) mgrowresp(m)=0.0
        mnpp(m) = mgpp(m)-(maintresp(m)+mgrowresp(m))
       end do
@@ -1738,6 +1745,8 @@ c     calculate the phi term that is used in the C4 13C fractionation
 c     routines
       if (pft.ge.8) then
        call calcphi(mgpp,phi)
+      else
+        phi=0.
       end if
 
 c     calculate carbon isotope fractionation in plants
@@ -2017,6 +2026,11 @@ c     C4 photosynthesis subroutine:
        parameter(ko25=30.*1e3,  kc25=30.,tao25=2600., cmass=12.)
        parameter(kcq10=2.1, koq10=1.2, taoq10=0.57, twigloss=1.)
 
+c      Adjust the partial pressure of o2 for elevation:
+
+       mfo2=slo2/1.e5
+       o2=p*mfo2 
+
 c      This leafcost parameter is a way of making the respiration costs
 c      of evergreen leaves larger than deciduous leaves.
 
@@ -2081,6 +2095,7 @@ c.........................................................
 c      Now use this vm value to calculate actual photosynthesis
 
 c      If pi is less than the compensation point then grossphot=0.
+       
        if(pi.le.ts)then
         grossphotc4=0.0
        else
@@ -2411,13 +2426,18 @@ c      LAI is not sustainable.
 
        if(demand.gt.supply)then
         a = (1. - supply/(deq(d)*alfam))
-        if (a.lt.0.0) a=0.0
-        gsurf    =  -gm*log(a)
-        aet      =  supply
-        gc = gsurf - gmin
+        if (a.gt.0.) then
+          gsurf    =  -gm*log(a)
+          aet      =  supply
+          gc = gsurf - gmin
+        else
+          gsurf = 0.
+          aet = 0.
+          gc = 0.
+        end if
 c       Constrain gc value to zero!
-        if (gc.le.0.0) then
-         gc=0.0
+        if (gc.le.0.) then
+         gc=0.
          wilt=.true.
         end if
        end if

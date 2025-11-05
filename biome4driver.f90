@@ -474,12 +474,14 @@ lai   = missval_sp
 
 ! lai = missval_sp
 
+write(0,*)
+
 do y = 1,cnty
 
   write(status_line,'(a,i0,a,i0)')' working on row ',y,' out of ',cnty
   call overprint(status_line)
 
-  !$OMP PARALLEL DEFAULT(SHARED) PRIVATE(p,input,output)
+  !$OMP PARALLEL DEFAULT(SHARED) PRIVATE(x,p,input,output)
   !$OMP DO SCHEDULE(GUIDED)
 
   do x = 1,cntx
