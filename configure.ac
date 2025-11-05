@@ -34,9 +34,17 @@ AC_FC_SRCEXT(f90)
 
 # ----
 
-# get the real name of the compiler
+if test "x$FC_REALNAME" = xmpifort; then
 
-FC_REALNAME=$($NETCDF_FC -show | awk '{print $1}')
+  # get the real name of the compiler
+
+  FC_REALNAME=$($NETCDF_FC -show | awk '{print $1}')
+
+else
+
+  FC_REALNAME=$NETCDF_FC
+
+fi
 
 # set the linker flags
 
@@ -78,8 +86,8 @@ if test "x$enable_debug" = xyes; then
   elif test "x$FC_REALNAME" = xgfortran; then
   
     CPPFLAGS="$CPPFLAGS -Dgfortran"
-    FCFLAGS="$FCFLAGS -ffree-line-length-none -finit-real=nan -fcheck=all -ffpe-trap=invalid,zero,overflow,underflow -g -fbacktrace -Wall -pedantic -fopenmp"
-
+    FCFLAGS="$FCFLAGS -Og -ffree-line-length-none -finit-real=nan -fcheck=all -ffpe-trap=invalid,zero,overflow,underflow -g -fbacktrace -Wall -pedantic -fopenmp"
+    
   else 
 
     dnl  generic debug flags
