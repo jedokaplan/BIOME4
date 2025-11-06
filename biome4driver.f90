@@ -515,12 +515,11 @@ do y = 1,cnty
     
     if (diag) then
       input(46) = 1.  ! diagnostic mode on
-      
-      write(0,*)x,y,input(49),input(1)
-      
     else
       input(46) = 0.  ! diagnostic mode off
     end if
+
+!     write(0,*)x,y,lon(x+srtx-1),lat(y+srty-1),input(49),input(1)
 
     call biome4(input,output)
         

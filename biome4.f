@@ -279,13 +279,19 @@ c       Reinitialize soil texture specific parameters
 
       end if
 
+c initialize optnpp and optlai
+
+      do pft=0,numofpfts
+
+       optlai(pft)=0.0
+       optnpp(pft)=0.0
+
+      end do
+
 c--------------------------------------------------------------------------
 c     Calculate optimal LAI & NPP for the selected pfts:
         
       do pft=1,numofpfts
-
-       optlai(pft)=0.0
-       optnpp(pft)=0.0
 
        if (pfts(pft).ne.0) then
 
@@ -401,7 +407,7 @@ c      real woodypercent,grasspercent
 
        grass(10)=.false.
 
-       if (optnpp(pft).gt.0.0) then
+       if (optnpp(pft).gt.0.) then
         present(pft)=.true.
        else
         present(pft)=.false.
@@ -2328,7 +2334,11 @@ c      Do the daily calculations to find the monthly output values
         meanwr(month,2)= 0.
         meanwr(month,3)= 0.
        meanaet(month) = 0.0   
-       runoffmonth(month)=0.0 
+       runoffmonth(month)=0.0
+
+c      set an initial value for fvc on the first day of the year, otherwise it is uninitalized
+       
+       fvc = maxfvc
 
        do 120 dayofmonth = 1,days(month)
        d = d+1
@@ -2340,7 +2350,6 @@ c      deq is the daily PET
 c      maxfvc is foliar vegetation cover (related to LAI).
 c      phentype is phenological type (1 evergreen, 2 summergreen, 3 watergreen)
 c      offw is soil moisture threshold for leaf drop
-
 
 c      Calculate vegetation phenology for today     
 
@@ -2354,12 +2363,12 @@ c      Calculate vegetation phenology for today
         fvc = maxfvc*dphen(d,grass)  
 
 c------new code-02.05.99----
-         if(fvc.gt.0.01.and.wr.gt.offw)then  !drought deciduous
+        if(fvc.gt.0.01.and.wr.gt.offw)then  !drought deciduous
           fvc = fvc
         else if(fvc.lt.0.01.and.wr.gt.onnw)then
          fvc = fvc
         else
-         fvc = 0.0
+         fvc = 0.
         end if
 c------end new code---------
 
@@ -2371,13 +2380,13 @@ c------end new code---------
         fvc = 0.0
        endif
 
-       if (fvc.gt.0.0) greendays=greendays+1
+       if (fvc.gt.0.) greendays=greendays+1
 
 c------------------------------------------------------------------------
-       if(dtemp(d).le.-10.0) then
-        gc=0.0
-        aet=0.0
-        perc=0.0
+       if(dtemp(d).le.-10.) then
+        gc=0.
+        aet=0.
+        perc=0.
        else    !begin a loop here to calculate under non-freezing conditions
 
 c---------------------------
@@ -2385,8 +2394,11 @@ c      If the fvc (ie. phenology) indicates vegetation bare of leaves,
 c      there can still be some evaporation and loss of water from
 c      the soil and stems (25% after Larcher 1995).
 
-       if (fvc.eq.0.0) then
+       if (fvc.eq.0.) then
         aet=0.25*deq(d)
+        
+        gmin = 0.
+        
        else
 c---------------------------
 
@@ -2430,13 +2442,16 @@ c      LAI is not sustainable.
           gsurf    =  -gm*log(a)
           aet      =  supply
           gc = gsurf - gmin
+          
+C          write(0,*)a,aet,gsurf,gmin,gc,fvc,mgmin
+          
         else
           gsurf = 0.
           aet = 0.
           gc = 0.
         end if
 c       Constrain gc value to zero!
-        if (gc.le.0.) then
+        if (gc.lt.0.) then
          gc=0.
          wilt=.true.
         end if

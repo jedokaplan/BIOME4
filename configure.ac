@@ -34,7 +34,7 @@ AC_FC_SRCEXT(f90)
 
 # ----
 
-if test "x$FC_REALNAME" = xmpifort; then
+if test "x$NETCDF_FC" = xmpifort; then
 
   # get the real name of the compiler
 
