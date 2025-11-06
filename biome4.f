@@ -432,7 +432,7 @@ c----Initialize all of the variables that index an array---
       maxdiffnpp=0.0
       grassnpp=0.0
 
-      do pft=1,12
+      do pft=0,12
         wetratio(pft) = 0.
       end do
 
