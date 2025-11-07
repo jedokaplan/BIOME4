@@ -432,7 +432,8 @@ c----Initialize all of the variables that index an array---
       maxdiffnpp=0.0
       grassnpp=0.0
 
-      do pft=0,12
+      do pft=0,numofpfts
+        wetlayer(pft,1:2) = 0.
         wetratio(pft) = 0.
       end do
 
@@ -470,11 +471,13 @@ c-----Find the PFTs with the highest npp and lai-------------------------
       end do
  
 c-----Find average annual soil moisture value for all PFTs:----------
-
+      
+      do pft=0,numofpfts
+        wetness(pft)=0.
+      end do
 
       do pft=1,numofpfts
 
-       wetness(pft)=0.
        wetlayer(pft,1)=0.0
        wetlayer(pft,2)=0.0
        drymonth(pft)=0
@@ -548,7 +551,6 @@ c------------------------------------------------------------
       end if
 
 c------------------------------------------------------------
-c     Under certain conditions grass will be the dominant or co-dominant PFT:
 
       if (wdom.eq.1) then
        if (optnpp(wdom).lt.2000.0) then
@@ -556,7 +558,12 @@ c     Under certain conditions grass will be the dominant or co-dominant PFT:
        subpft=1
        goto 1
        end if
-      end if         
+      end if
+      
+c------------------------------------------------------------
+c     Under certain conditions grass will be the dominant or co-dominant PFT:
+
+      if (grassnpp.gt.0.) then
 
       if (wdom.eq.2) then
        if (woodylai.lt.2.0) then
@@ -629,8 +636,13 @@ c       end if
        else
         optpft=wdom
        end if
-      end if 
+      end if
+      
+      else
+       optpft=wdom
+      end if
 
+c------------------------------------------------------------
 
 c     add npp limits on other PFT's (tropical mountain story)
 
@@ -994,6 +1006,9 @@ c      Monthly soil moisture, mean, top, and bottom layers *100
        
        output(425)=nint(wetlayer(dom,1))
        output(426)=nint(wetlayer(dom,2))
+       
+C      write(0,*)dom,wetratio
+       
        output(427)=nint(wetratio(dom)*100.)
        
        output(450)=optdata(dom,450)    !meanKlit
