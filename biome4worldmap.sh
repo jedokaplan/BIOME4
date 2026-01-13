@@ -1,4 +1,4 @@
-#!/opt/local/bin/bash
+#!/usr/bin/env bash
 
 gmt gmtset MAP_FRAME_TYPE plain
 gmt gmtset MAP_FRAME_PEN thinnest,black
@@ -8,7 +8,7 @@ gmt gmtset FONT_LABEL 7p,Helvetica,black
 gmt gmtset FONT_TITLE 9p,Helvetica,black
 gmt gmtset MAP_TITLE_OFFSET 0
 
-naturalearth=/Users/jkaplan/Documents/datasets/naturalearth
+naturalearth=/home/terraces/datasets/naturalearth
 
 ocean=$naturalearth/ne_50m_ocean_blocks.gmt
 lakes=$naturalearth/ne_50m_lakes.gmt
@@ -21,7 +21,7 @@ output=biome4worldmap.ps
 
 infile=${1}
 
-gmt psbasemap -R-169/191/-90/90 -JQ25 -B0 -B+t"Potential natural vegetation (mid-20@+th@+ century) simulated by BIOME4" -P -K > $output
+gmt psbasemap -R-169/191/-90/90 -JQ25 -B0 -B+t"6000 BP vegetation" -P -K > $output
 
 gmt grdimage $infile?biome -R -J -C$legend -nn -O -P -K >> $output
 
